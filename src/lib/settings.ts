@@ -115,12 +115,19 @@ export async function getSettings(): Promise<SiteSettings> {
 export async function saveSettings(input: Record<string, string>) {
   const allowed = new Set(Object.keys(DEFAULTS));
   const entries = Object.entries(input).filter(([k]) => allowed.has(k));
-  for (const [key, value] of entries) {
-    await prisma.setting.upsert({
-      where: { key },
-      update: { value },
-      create: { key, value },
-    });
-  }
+
+  // One transaction instead of ~30 sequential round-trips: it holds a single
+  // pooled connection and keeps the write atomic, so a failure part-way can't
+  // leave the settings half-saved.
+  await prisma.$transaction(
+    entries.map(([key, value]) =>
+      prisma.setting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      })
+    )
+  );
+
   revalidateTag(SETTINGS_TAG, "max");
 }

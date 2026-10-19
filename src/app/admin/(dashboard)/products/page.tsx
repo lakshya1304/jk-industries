@@ -8,6 +8,12 @@ import { NoImage } from "@/components/ui/NoImage";
 import { ProductRowActions } from "@/components/admin/ProductRowActions";
 import { BestSellersChart } from "@/components/admin/BestSellersChart";
 
+export const metadata = { title: "Products" };
+
+// The best-sellers chart reads live order data, so this route blocks instead of
+// prerendering (it cannot be turned into an instant navigation).
+export const instant = false;
+
 export default async function AdminProductsPage() {
   const products = await listAdminProducts();
 

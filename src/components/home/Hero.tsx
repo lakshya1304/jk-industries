@@ -39,21 +39,46 @@ export function Hero({
   const words = title.split(" ");
   const waHref = waLink(whatsappNumber, generalEnquiryMessage(brandName));
 
-  // Shuffle once per mount so the sequence differs between visits.
-  const shuffled = useMemo(() => shuffle(images), [images]);
+  // Shuffling has to happen on the client only: doing it during render would
+  // call Math.random() while the route is prerendered, which Next flags as an
+  // unstable value (and would bake one fixed order into the HTML). The mount
+  // flag (same pattern as ThemeToggle) defers the shuffle to after hydration,
+  // so both sides first render the natural order.
+  const [mounted, setMounted] = useState(false);
+  const order = useMemo(() => (mounted ? shuffle(images) : images), [mounted, images]);
   const [index, setIndex] = useState(0);
-  const count = shuffled.length;
+  const count = order.length;
 
   useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Advance the carousel on a timer, but never let a throttled/backgrounded tab
+  // leave a stale image on screen: when the page becomes visible again we
+  // resync from the clock instead of waiting for the next interval tick.
+  useEffect(() => {
     if (count < 2 || reduced) return;
-    const timer = setInterval(() => setIndex((i) => (i + 1) % count), ROTATE_MS);
-    return () => clearInterval(timer);
+
+    const started = Date.now();
+    const tick = () => setIndex(Math.floor((Date.now() - started) / ROTATE_MS) % count);
+    const timer = setInterval(tick, 1000);
+    const onVisible = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [count, reduced]);
 
   // The three slots cycle independently so the cluster always looks varied.
-  const main = count > 0 ? shuffled[index % count] : undefined;
-  const left = count > 0 ? shuffled[(index + 1) % count] : undefined;
-  const right = count > 1 ? shuffled[(index + 2) % count] : main;
+  const main = count > 0 ? order[index % count] : undefined;
+  const left = count > 0 ? order[(index + 1) % count] : undefined;
+  const right = count > 1 ? order[(index + 2) % count] : main;
 
   return (
     <section
@@ -198,7 +223,7 @@ export function Hero({
           {/* rotation progress dots */}
           {count > 1 && (
             <div className="absolute inset-x-0 -bottom-6 z-40 flex justify-center gap-1.5" aria-hidden>
-              {shuffled.map((img, i) => (
+              {order.map((img, i) => (
                 <span
                   key={img.src + i}
                   className={cn(
