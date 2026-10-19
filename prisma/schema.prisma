@@ -1,0 +1,149 @@
+// Super Cleaner — JK Industries
+// Database schema.
+//
+// NOTE: The provider is set to `sqlite` so the MVP runs locally with zero setup.
+// For production, switch to PostgreSQL:
+//   1. Change `provider = "sqlite"` to `provider = "postgresql"` below.
+//   2. Set DATABASE_URL to your Postgres connection string.
+//   3. Run `npx prisma migrate deploy`.
+// The schema intentionally avoids provider-specific features (enums, Json) so it
+// works unchanged on both providers.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id             String     @id @default(cuid())
+  name           String
+  slug           String     @unique
+  sku            String     @unique
+  description    String     @default("")
+  usage          String     @default("")
+  images         String     @default("[]") // JSON array of image URLs
+  minOrderQty    Int        @default(1)
+  unitsPerCarton Int?
+  availability   String     @default("in_stock") // in_stock | out_of_stock | on_request
+  featured       Boolean    @default(false)
+  active         Boolean    @default(true)
+  showPrice      Boolean    @default(true)
+  sortOrder      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  packSizes      PackSize[]
+
+  @@index([active, featured])
+}
+
+model PackSize {
+  id             String  @id @default(cuid())
+  productId      String
+  product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label          String // e.g. "500 ml"
+  mrp            Float
+  wholesalePrice Float?
+  active         Boolean @default(true)
+  sortOrder      Int     @default(0)
+
+  @@index([productId])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  reference    String      @unique
+  status       String      @default("pending") // pending | confirmed | processing | shipped | delivered | cancelled
+  customerName String
+  businessName String?
+  mobile       String
+  email        String?
+  gstin        String?
+  address      String
+  city         String
+  state        String
+  pincode      String
+  notes        String?
+  internalNotes String? // staff-only notes, never shown to customers
+  subtotal     Float
+  itemCount    Int
+  clientToken  String? // idempotency token to prevent duplicate submissions
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  items        OrderItem[]
+  events       OrderEvent[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Chronological audit trail of every status change and whether the customer
+// was notified (WhatsApp/SMS) or the message was left for manual sending.
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String // status after this change
+  channel   String   @default("none") // whatsapp | sms | none
+  notified  Boolean  @default(false) // true when a provider accepted the message
+  detail    String? // provider error text, when automatic sending failed
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// Line items snapshot product/price data at order time so historical orders
+// are unaffected by later catalogue changes.
+model OrderItem {
+  id             String @id @default(cuid())
+  orderId        String
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String?
+  productName    String
+  sku            String
+  packLabel      String
+  unitMrp        Float
+  unitWholesale  Float?
+  quantity       Int
+  lineTotal      Float
+
+  @@index([orderId])
+}
+
+model Enquiry {
+  id           String   @id @default(cuid())
+  type         String   @default("contact") // contact | product | dealer | wholesale
+  name         String
+  businessName String?
+  mobile       String
+  email        String?
+  city         String?
+  state        String?
+  productSku   String?
+  productName  String?
+  message      String   @default("")
+  status       String   @default("new") // new | contacted | resolved
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}

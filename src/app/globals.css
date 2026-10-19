@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Design system — Super Cleaner / JK Industries                       */
+/* ------------------------------------------------------------------ */
+
+@theme {
+  /* Brand palette */
+  --color-navy-950: #060f1d;
+  --color-navy-900: #0b1f3a;
+  --color-navy-800: #12294a;
+  --color-navy-700: #1a365d;
+  --color-navy-600: #1e3a5f;
+  --color-navy-500: #2c4a72;
+  --color-navy-100: #dbe4f0;
+  --color-navy-50: #eef3f9;
+
+  --color-fresh-700: #15803d;
+  --color-fresh-600: #16a34a;
+  --color-fresh-500: #22c55e;
+  --color-fresh-100: #dcfce7;
+  --color-fresh-50: #f0fdf4;
+
+  --color-surface: #f6f8fb;
+  --color-ink: #0b1f3a;
+  --color-ink-soft: #475569;
+  --color-ink-mute: #64748b;
+
+  /* Typography */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-float-slow: float-slow 9s ease-in-out infinite;
+  --animate-float-slower: float-slow 13s ease-in-out infinite reverse;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-badge-pop: badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(0, -22px, 0) rotate(2deg);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @keyframes badge-pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0.4;
+    }
+    60% {
+      transform: scale(1.25);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-fresh-100);
+  color: var(--color-navy-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-fresh-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Subtle glass panel used sparingly (navbar, drawer, hero chips) */
+.glass {
+  background-color: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.glass-dark {
+  background-color: rgb(6 15 29 / 0.45);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+}
+
+/* Skeleton shimmer used for loading states */
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    #e8edf4 8%,
+    #f4f7fb 18%,
+    #e8edf4 33%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* Section rhythm */
+.section {
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.container-page {
+  margin-inline: auto;
+  width: min(100% - 2rem, 76rem);
+}
+
+@media (min-width: 640px) {
+  .container-page {
+    width: min(100% - 3rem, 76rem);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Accessibility — respect reduced motion                             */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
