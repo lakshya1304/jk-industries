@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag, revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getSettings } from "@/lib/settings";
 import { parseImages } from "@/lib/utils";
 import type { PackSizeDTO, ProductDTO } from "@/lib/types";
 
@@ -93,4 +94,25 @@ export function revalidateProducts() {
   revalidatePath("/", "page");
   revalidatePath("/products", "page");
   revalidatePath("/products/[slug]", "page");
+}
+
+/**
+ * Photos for the homepage hero cluster.
+ *
+ * Uses the dedicated hero images configured in admin settings when present,
+ * otherwise falls back to real product photos (never a placeholder graphic).
+ */
+export async function getHeroImages(): Promise<{ src: string; alt: string }[]> {
+  const settings = await getSettings();
+  if (settings.heroImages.length > 0) {
+    return settings.heroImages.map((src, i) => ({
+      src,
+      alt: `${settings.brandName} product range photo ${i + 1}`,
+    }));
+  }
+
+  const products = await getActiveProducts();
+  return products
+    .filter((p) => p.images.length > 0)
+    .map((p) => ({ src: p.images[0], alt: p.name }));
 }

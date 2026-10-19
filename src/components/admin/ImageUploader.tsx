@@ -8,9 +8,12 @@ const MAX_IMAGES = 6;
 export function ImageUploader({
   images,
   onChange,
+  max = MAX_IMAGES,
 }: {
   images: string[];
   onChange: (next: string[]) => void;
+  /** Maximum number of images. Defaults to 6 (product photos). */
+  max?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -23,8 +26,8 @@ export function ImageUploader({
     setUploading(true);
     const next = [...images];
     for (const file of Array.from(files)) {
-      if (next.length >= MAX_IMAGES) {
-        setError(`Maximum ${MAX_IMAGES} images allowed.`);
+      if (next.length >= max) {
+        setError(`Maximum ${max} images allowed.`);
         break;
       }
       const fd = new FormData();
@@ -41,7 +44,7 @@ export function ImageUploader({
         setError("Upload failed due to a network error.");
       }
     }
-    onChange(next.slice(0, MAX_IMAGES));
+    onChange(next.slice(0, max));
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -49,12 +52,12 @@ export function ImageUploader({
   function addUrl() {
     const url = urlValue.trim();
     if (!url) return;
-    if (images.length >= MAX_IMAGES) {
-      setError(`Maximum ${MAX_IMAGES} images allowed.`);
+    if (images.length >= max) {
+      setError(`Maximum ${max} images allowed.`);
       return;
     }
     setError(null);
-    onChange([...images, url].slice(0, MAX_IMAGES));
+    onChange([...images, url].slice(0, max));
     setUrlValue("");
   }
 
@@ -95,7 +98,7 @@ export function ImageUploader({
           </div>
         ))}
 
-        {images.length < MAX_IMAGES && (
+        {images.length < max && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

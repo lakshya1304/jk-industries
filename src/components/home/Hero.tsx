@@ -1,25 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useRef } from "react";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Droplets, MessageCircle, MousePointer2, Sparkles } from "lucide-react";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
-/** Photos shown in the hero cluster. Empty array = branded 3D panels. */
-const HERO_IMAGES: { src: string; alt: string }[] = [];
+export type HeroImage = { src: string; alt: string };
+
+const ROTATE_MS = 4200;
 
 export function Hero({
   brandName,
   whatsappNumber,
   title,
   subtitle,
+  images = [],
 }: {
   brandName: string;
   whatsappNumber: string;
   title: string;
   subtitle: string;
+  /** Product/site photos for the rotating cluster. Empty = branded 3D panels. */
+  images?: HeroImage[];
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
@@ -35,6 +39,22 @@ export function Hero({
   const words = title.split(" ");
   const waHref = waLink(whatsappNumber, generalEnquiryMessage(brandName));
 
+  // Shuffle once per mount so the sequence differs between visits.
+  const shuffled = useMemo(() => shuffle(images), [images]);
+  const [index, setIndex] = useState(0);
+  const count = shuffled.length;
+
+  useEffect(() => {
+    if (count < 2 || reduced) return;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % count), ROTATE_MS);
+    return () => clearInterval(timer);
+  }, [count, reduced]);
+
+  // The three slots cycle independently so the cluster always looks varied.
+  const main = count > 0 ? shuffled[index % count] : undefined;
+  const left = count > 0 ? shuffled[(index + 1) % count] : undefined;
+  const right = count > 1 ? shuffled[(index + 2) % count] : main;
+
   return (
     <section
       ref={sectionRef}
@@ -42,17 +62,11 @@ export function Hero({
       aria-label="Introduction"
     >
       {/* ---------- animated background ---------- */}
-      <motion.div
-        aria-hidden
-        style={{ y: bgY }}
-        className="absolute inset-0 -z-10"
-      >
+      <motion.div aria-hidden style={{ y: bgY }} className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_80%_-10%,#12294a_0%,#0b1f3a_45%,#060f1d_100%)]" />
-        {/* soft floating glows */}
         <div className={cn("absolute -top-24 left-[12%] size-96 rounded-full bg-fresh-600/14 blur-3xl", !reduced && "animate-float-slow")} />
         <div className={cn("absolute top-40 right-[8%] size-[28rem] rounded-full bg-sky-500/12 blur-3xl", !reduced && "animate-float-slower")} />
         <div className={cn("absolute bottom-[-10%] left-[38%] size-72 rounded-full bg-indigo-400/10 blur-3xl", !reduced && "animate-float-slow")} />
-        {/* fine grid */}
         <div
           className="absolute inset-0 opacity-[0.14]"
           style={{
@@ -85,11 +99,7 @@ export function Hero({
                   className={cn("inline-block", word.toLowerCase().startsWith("cleaner") && "text-fresh-500")}
                   initial={reduced ? { opacity: 0 } : { opacity: 0, y: "100%" }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.8,
-                    delay: 0.12 + i * 0.07,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
+                  transition={{ duration: 0.8, delay: 0.12 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {word}
                   {i < words.length - 1 ? "\u00A0" : ""}
@@ -118,10 +128,7 @@ export function Hero({
               className="group inline-flex h-13 items-center gap-2 rounded-full bg-fresh-600 px-7 text-base font-bold text-white shadow-[0_18px_40px_-18px_rgba(22,163,74,0.9)] transition-[background-color,transform] duration-200 hover:bg-fresh-700 active:scale-[0.97]"
             >
               Explore Products
-              <ArrowRight
-                className="size-4.5 transition-transform duration-300 group-hover:translate-x-1"
-                aria-hidden
-              />
+              <ArrowRight className="size-4.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </Link>
             <a
               href={waHref}
@@ -139,7 +146,6 @@ export function Hero({
         <div
           className="relative mx-auto h-[24rem] w-full max-w-lg sm:h-[28rem] lg:h-[34rem]"
           style={{ perspective: "1400px" }}
-          aria-hidden={false}
         >
           <motion.div
             initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 30 }}
@@ -148,11 +154,11 @@ export function Hero({
             style={{ y: yMain, transformStyle: "preserve-3d" }}
             className="absolute inset-x-8 top-6 bottom-0 z-20 sm:inset-x-16"
           >
-            <HeroPanel
-              variant="main"
-              src={HERO_IMAGES[1]?.src}
-              alt={HERO_IMAGES[1]?.alt}
+            <HeroSlot
+              slot="main"
+              image={main}
               brandName={brandName}
+              index={index}
               className="h-full w-full rotate-[-2deg] shadow-[0_50px_90px_-40px_rgba(0,0,0,0.75)]"
             />
           </motion.div>
@@ -164,11 +170,11 @@ export function Hero({
             style={{ y: yLeft }}
             className="absolute top-16 -left-2 z-10 w-36 sm:top-24 sm:-left-4 sm:w-44 lg:w-52"
           >
-            <HeroPanel
-              variant="spray"
-              src={HERO_IMAGES[0]?.src}
-              alt={HERO_IMAGES[0]?.alt}
+            <HeroSlot
+              slot="spray"
+              image={left}
               brandName={brandName}
+              index={index}
               className="shadow-[0_40px_70px_-35px_rgba(0,0,0,0.7)]"
             />
           </motion.div>
@@ -180,14 +186,29 @@ export function Hero({
             style={{ y: yRight }}
             className="absolute right-0 bottom-0 z-30 w-36 sm:right-2 sm:w-44 lg:w-52"
           >
-            <HeroPanel
-              variant="car"
-              src={HERO_IMAGES[2]?.src}
-              alt={HERO_IMAGES[2]?.alt}
+            <HeroSlot
+              slot="car"
+              image={right}
               brandName={brandName}
+              index={index}
               className="shadow-[0_40px_70px_-35px_rgba(0,0,0,0.7)]"
             />
           </motion.div>
+
+          {/* rotation progress dots */}
+          {count > 1 && (
+            <div className="absolute inset-x-0 -bottom-6 z-40 flex justify-center gap-1.5" aria-hidden>
+              {shuffled.map((img, i) => (
+                <span
+                  key={img.src + i}
+                  className={cn(
+                    "h-1.5 rounded-full bg-white transition-all duration-300",
+                    i === index % count ? "w-5 bg-fresh-400" : "w-1.5 bg-white/35"
+                  )}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -211,58 +232,76 @@ export function Hero({
   );
 }
 
-function HeroImageCard({
-  src,
-  alt,
+/** Fisher–Yates shuffle on a copy, so the caller's array is never mutated. */
+function shuffle<T>(input: T[]): T[] {
+  const out = [...input];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * One slot in the hero cluster. Cross-fades between photos with a 3D
+ * rotate/translate so a swap reads as depth rather than a hard cut. Falls back
+ * to a branded glass panel when no photo is available.
+ */
+function HeroSlot({
+  slot,
+  image,
+  brandName,
+  index,
   className,
 }: {
-  src: string;
-  alt: string;
+  slot: "main" | "spray" | "car";
+  image?: HeroImage;
+  brandName: string;
+  index: number;
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-3xl border border-white/12 bg-white/95 backdrop-blur-sm",
-        className
-      )}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} className="size-full object-cover" />
+    <div className={cn("[transform-style:preserve-3d]", className)}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={image?.src ?? `${slot}-panel`}
+          initial={{ opacity: 0, rotateY: 42, z: -90 }}
+          animate={{ opacity: 1, rotateY: 0, z: 0 }}
+          exit={{ opacity: 0, rotateY: -42, z: -90 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="size-full [transform-style:preserve-3d]"
+        >
+          {image ? (
+            <div className="size-full overflow-hidden rounded-3xl border border-white/12 bg-white/95 shadow-inner backdrop-blur-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.src}
+                alt={image.alt}
+                loading={index === 0 ? "eager" : "lazy"}
+                className="size-full object-cover"
+              />
+            </div>
+          ) : (
+            <FallbackPanel slot={slot} brandName={brandName} />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
 
-/**
- * Hero tile. Shows a real product photo when one is available, otherwise a
- * branded 3D glass panel (so the hero never displays a fake product image).
- */
-function HeroPanel({
-  variant,
-  src,
-  alt,
-  brandName,
-  className,
-}: {
-  variant: "main" | "spray" | "car";
-  src?: string;
-  alt?: string;
-  brandName: string;
-  className?: string;
-}) {
-  if (src) return <HeroImageCard src={src} alt={alt ?? brandName} className={className} />;
-
-  const isMain = variant === "main";
-  const Icon = variant === "spray" ? Droplets : variant === "car" ? Sparkles : Droplets;
+/** Branded 3D glass tile shown until real product photos exist. */
+function FallbackPanel({ slot, brandName }: { slot: "main" | "spray" | "car"; brandName: string }) {
+  const isMain = slot === "main";
+  const Icon = slot === "spray" ? Droplets : Sparkles;
 
   return (
     <div
       className={cn(
-        "relative flex flex-col justify-between overflow-hidden rounded-3xl border border-white/15 p-5 text-white",
+        "relative flex size-full flex-col justify-between overflow-hidden rounded-3xl border border-white/15 p-5 text-white",
         "bg-[linear-gradient(150deg,rgba(255,255,255,0.16),rgba(255,255,255,0.04)_45%,rgba(34,197,94,0.18))]",
         "backdrop-blur-md [transform-style:preserve-3d]",
-        isMain ? "items-start" : "items-center justify-center gap-3 text-center",
-        className
+        isMain ? "items-start" : "items-center justify-center gap-3 text-center"
       )}
     >
       <span

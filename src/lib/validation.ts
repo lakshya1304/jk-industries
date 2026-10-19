@@ -175,6 +175,7 @@ export const adminSettingsSchema = z.object({
   showStockBadge: z.boolean(),
   heroTitle: z.string().trim().max(120),
   heroSubtitle: z.string().trim().max(400),
+  heroImages: z.array(z.string().trim().max(300)).max(8).default([]),
   brandIntro: z.string().trim().max(1000),
   aboutText: z.string().trim().max(2000),
   whyChooseItems: z

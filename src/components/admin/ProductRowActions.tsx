@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/Switch";
 import { cn } from "@/lib/utils";
 
 export function ProductRowActions({
@@ -67,25 +68,22 @@ export function ProductRowActions({
 
   return (
     <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isActive}
-        aria-label={`${isActive ? "Hide" : "Show"} ${name}`}
-        disabled={busy}
-        onClick={toggleActive}
-        className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60",
-          isActive ? "bg-fresh-600" : "bg-slate-300"
-        )}
-      >
+      <span className="flex items-center gap-2">
+        <Switch
+          checked={isActive}
+          onChange={toggleActive}
+          disabled={busy}
+          label={`${isActive ? "Hide" : "Show"} ${name} on the website`}
+        />
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform",
-            isActive ? "translate-x-5.5" : "translate-x-0.5"
+            "hidden text-xs font-bold sm:inline",
+            isActive ? "text-fresh-700" : "text-ink-mute"
           )}
-        />
-      </button>
+        >
+          {isActive ? "Live" : "Hidden"}
+        </span>
+      </span>
 
       <button
         type="button"

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/Field";
 import { adminSettingsSchema } from "@/lib/validation";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import type { SiteSettings, WhyChooseItem } from "@/lib/types";
 
 type Errors = Record<string, string>;
@@ -40,6 +41,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   const [benefits, setBenefits] = useState<WhyChooseItem[]>(
     settings.whyChooseItems.length > 0 ? settings.whyChooseItems : [{ title: "", text: "" }]
   );
+  const [heroImages, setHeroImages] = useState<string[]>(settings.heroImages);
   const [errors, setErrors] = useState<Errors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -56,7 +58,11 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
     setSubmitError(null);
     setSaved(false);
 
-    const payload = { ...form, whyChooseItems: benefits.filter((b) => b.title.trim() !== "") };
+    const payload = {
+      ...form,
+      heroImages,
+      whyChooseItems: benefits.filter((b) => b.title.trim() !== ""),
+    };
     const parsed = adminSettingsSchema.safeParse(payload);
     if (!parsed.success) {
       const next: Errors = {};
@@ -235,6 +241,20 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             ))}
           </AnimatePresence>
         </div>
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
+        <div>
+          <h2 className="text-base font-extrabold text-navy-900">Homepage hero photos</h2>
+          <p className="mt-1 text-xs text-ink-mute">
+            These photos rotate automatically on the homepage with a 3D flip. Leave empty to use
+            your product photos instead. Up to 8 images.
+          </p>
+        </div>
+        <ImageUploader images={heroImages} onChange={setHeroImages} max={8} />
+        {errors.heroImages && (
+          <p className="text-xs font-semibold text-red-600">{errors.heroImages}</p>
+        )}
       </section>
 
       <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">

@@ -1,4 +1,5 @@
 import { getSettings } from "@/lib/settings";
+import { getHeroImages } from "@/lib/products";
 import { Hero } from "@/components/home/Hero";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { BrandIntro } from "@/components/home/BrandIntro";
@@ -6,7 +7,7 @@ import { WhyChoose } from "@/components/home/WhyChoose";
 import { CtaBanner } from "@/components/home/CtaBanner";
 
 export default async function HomePage() {
-  const settings = await getSettings();
+  const [settings, heroImages] = await Promise.all([getSettings(), getHeroImages()]);
 
   return (
     <>
@@ -15,6 +16,7 @@ export default async function HomePage() {
         whatsappNumber={settings.whatsappNumber}
         title={settings.heroTitle}
         subtitle={settings.heroSubtitle}
+        images={heroImages}
       />
       <FeaturedProducts />
       <BrandIntro />

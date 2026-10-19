@@ -3,8 +3,13 @@ import { Boxes, CircleAlert, PackageX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { StockCell } from "@/components/admin/StockCell";
+import { StockLevelChart } from "@/components/admin/StockLevelChart";
 
 export const metadata = { title: "Inventory" };
+
+// Reads live stock levels, so the route blocks rather than prerendering.
+export const instant = false;
 
 const LOW_STOCK_THRESHOLD = 15;
 
@@ -38,14 +43,23 @@ export default async function AdminInventoryPage() {
   const untracked = rows.length - tracked.length;
   const stockValue = tracked.reduce((sum, r) => sum + (r.stock as number) * r.mrp, 0);
 
+  const chartBars = [...tracked]
+    .sort((a, b) => (a.stock as number) - (b.stock as number))
+    .map((r) => ({
+      key: r.key,
+      label: r.label,
+      productName: r.productName,
+      stock: r.stock as number,
+    }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-navy-900">Inventory</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Stock per pack size. Orders reserve stock automatically; cancelling an order returns
-            it. Edit stock on the product page.
+            Stock per pack size. Click a stock number to edit it. Orders reserve stock
+            automatically; cancelling an order returns it.
           </p>
         </div>
         <Link
@@ -88,6 +102,8 @@ export default async function AdminInventoryPage() {
         </div>
       )}
 
+      <StockLevelChart bars={chartBars} lowThreshold={LOW_STOCK_THRESHOLD} />
+
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-navy-900/15 bg-white p-12 text-center">
           <PackageX className="mx-auto size-8 text-ink-mute" aria-hidden />
@@ -105,7 +121,7 @@ export default async function AdminInventoryPage() {
                   <th className="px-4 py-3 text-right">MRP</th>
                   <th className="px-4 py-3 text-right">Stock</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Edit</th>
+                  <th className="px-4 py-3 text-right">Manage</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,8 +133,14 @@ export default async function AdminInventoryPage() {
                     </td>
                     <td className="px-4 py-3 text-ink-soft">{r.label}</td>
                     <td className="px-4 py-3 text-right font-semibold text-navy-900">{formatINR(r.mrp)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-navy-900">
-                      {r.stock ?? "—"}
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <StockCell
+                          packSizeId={r.key}
+                          stock={r.stock}
+                          lowThreshold={LOW_STOCK_THRESHOLD}
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {!r.active ? (

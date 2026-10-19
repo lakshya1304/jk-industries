@@ -36,6 +36,7 @@ export async function PUT(request: Request) {
     showStockBadge: String(d.showStockBadge),
     heroTitle: d.heroTitle,
     heroSubtitle: d.heroSubtitle,
+    heroImages: JSON.stringify(d.heroImages),
     brandIntro: d.brandIntro,
     aboutText: d.aboutText,
     whyChooseItems: JSON.stringify(d.whyChooseItems),

@@ -6,6 +6,10 @@ import { formatDate, formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 
+// This page reads live order/product counts, so it blocks on the server instead
+// of being validated during instant navigation.
+export const instant = false;
+
 export default async function AdminOverviewPage() {
   const [
     totalProducts,

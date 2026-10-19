@@ -44,6 +44,8 @@ export type SiteSettings = {
   showStockBadge: boolean;
   heroTitle: string;
   heroSubtitle: string;
+  /** Photos shown in the homepage hero carousel. Empty = fall back to product photos. */
+  heroImages: string[];
   brandIntro: string;
   aboutText: string;
   whyChooseItems: WhyChooseItem[];

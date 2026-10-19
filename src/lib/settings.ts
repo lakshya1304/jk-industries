@@ -22,6 +22,7 @@ const DEFAULTS: SiteSettings = {
   heroTitle: "A Cleaner World Starts Here.",
   heroSubtitle:
     "Explore the Super Cleaner range of cleaning and automotive care products from JK Industries — available for retail, wholesale and bulk supply.",
+  heroImages: [],
   brandIntro:
     "Super Cleaner is manufactured by JK Industries. Our team supplies cleaning and automotive care products to retailers, shops, wholesalers and distributors.",
   aboutText:
@@ -58,6 +59,19 @@ function parseWhyChoose(v: string | undefined): WhyChooseItem[] {
   return DEFAULTS.whyChooseItems;
 }
 
+function parseHeroImages(v: string | undefined): string[] {
+  if (!v) return [];
+  try {
+    const parsed = JSON.parse(v);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((u) => typeof u === "string" && u.trim()).slice(0, 8);
+    }
+  } catch {
+    /* fall through to no images */
+  }
+  return [];
+}
+
 /**
  * Read site settings. Cached with the Cache Components model and invalidated
  * from the admin settings screen via revalidateTag.
@@ -87,6 +101,7 @@ export async function getSettings(): Promise<SiteSettings> {
     showStockBadge: toBool(map.get("showStockBadge"), DEFAULTS.showStockBadge),
     heroTitle: map.get("heroTitle") ?? DEFAULTS.heroTitle,
     heroSubtitle: map.get("heroSubtitle") ?? DEFAULTS.heroSubtitle,
+    heroImages: parseHeroImages(map.get("heroImages")),
     brandIntro: map.get("brandIntro") ?? DEFAULTS.brandIntro,
     aboutText: map.get("aboutText") ?? DEFAULTS.aboutText,
     whyChooseItems: parseWhyChoose(map.get("whyChooseItems")),

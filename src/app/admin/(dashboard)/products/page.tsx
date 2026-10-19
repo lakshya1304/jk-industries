@@ -6,6 +6,7 @@ import { AVAILABILITY_LABELS } from "@/lib/constants";
 import { Badge, AvailabilityBadge } from "@/components/ui/Badge";
 import { NoImage } from "@/components/ui/NoImage";
 import { ProductRowActions } from "@/components/admin/ProductRowActions";
+import { BestSellersChart } from "@/components/admin/BestSellersChart";
 
 export default async function AdminProductsPage() {
   const products = await listAdminProducts();
@@ -28,6 +29,8 @@ export default async function AdminProductsPage() {
           Add product
         </Link>
       </div>
+
+      <BestSellersChart />
 
       {products.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-navy-900/15 bg-white p-12 text-center">
