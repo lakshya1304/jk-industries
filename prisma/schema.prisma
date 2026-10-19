@@ -1,16 +1,14 @@
 // Super Cleaner — JK Industries
 // Database schema.
 //
-// NOTE: The provider is set to `sqlite` so the MVP runs locally with zero setup.
-// For production, switch to PostgreSQL:
-//   1. Change `provider = "sqlite"` to `provider = "postgresql"` below.
-//   2. Set DATABASE_URL to your Postgres connection string.
-//   3. Run `npx prisma migrate deploy`.
+// The provider is set to `postgresql` (production — Vercel + Prisma Postgres).
+// For a pure-SQLite local sandbox, change the provider to "sqlite", point
+// DATABASE_URL at "file:./dev.db" and run `npm run db:push`.
 // The schema intentionally avoids provider-specific features (enums, Json) so it
 // works unchanged on both providers.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
