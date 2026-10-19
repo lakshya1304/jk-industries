@@ -24,5 +24,5 @@ export type AdminProduct = {
   active: boolean;
   showPrice: boolean;
   sortOrder: number;
-  packSizes: AdminPackSize[];
+  packSizes: (AdminPackSize & { stock: number | null })[];
 };

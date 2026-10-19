@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import {
+  Boxes,
   ExternalLink,
   LayoutDashboard,
   LogOut,
@@ -16,10 +17,13 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AlertBell } from "@/components/admin/AlertBell";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/products", label: "Products", icon: Package, exact: false },
+  { href: "/admin/inventory", label: "Inventory", icon: Boxes, exact: false },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag, exact: false },
   { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquare, exact: false },
   { href: "/admin/settings", label: "Settings", icon: Settings, exact: false },
@@ -86,11 +90,12 @@ export function AdminShell({
     <div className="flex h-full flex-col gap-6 p-4">
       <div className="flex items-center justify-between gap-3 px-1.5 pt-1">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-fresh-600 text-white">
-            <Package className="size-4.5" aria-hidden />
+          <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/jk-mark.svg" alt="JK Industries" className="size-full" />
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-extrabold text-white">Super Cleaner</span>
+            <span className="block text-sm font-extrabold text-white">JK Industries</span>
             <span className="block text-[11px] font-medium text-navy-100/60">Admin dashboard</span>
           </span>
         </Link>
@@ -177,7 +182,10 @@ export function AdminShell({
               {titleFor(pathname)}
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="ml-auto flex items-center gap-1.5">
+            <ThemeToggle />
+            <AlertBell />
+            <span className="mx-1 hidden h-8 w-px bg-navy-900/10 sm:block" aria-hidden />
             <span className="hidden text-right leading-tight sm:block">
               <span className="block text-xs font-bold text-navy-900">{session.name}</span>
               <span className="block text-[11px] text-ink-mute">{session.email}</span>

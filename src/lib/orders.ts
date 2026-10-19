@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateOrderReference } from "@/lib/utils";
+import { revalidateProducts } from "@/lib/products";
 import { sendOrderNotificationEmail } from "@/lib/email";
 import type { OrderRequestInput } from "@/lib/validation";
 
@@ -53,6 +54,7 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
 
   type Line = {
     productId: string;
+    packSizeId: string;
     productName: string;
     sku: string;
     packLabel: string;
@@ -76,9 +78,16 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
     if (product.availability === "out_of_stock") {
       throw new OrderError(`${product.name} is currently out of stock.`);
     }
+    // Stock is tracked only for pack sizes that have a stock value set.
+    if (packSize.stock != null && item.quantity > packSize.stock) {
+      throw new OrderError(
+        `Only ${packSize.stock} unit${packSize.stock === 1 ? "" : "s"} of ${product.name} (${packSize.label}) are available right now.`
+      );
+    }
     qtyPerProduct.set(product.id, (qtyPerProduct.get(product.id) ?? 0) + item.quantity);
     lines.push({
       productId: product.id,
+      packSizeId: packSize.id,
       productName: product.name,
       sku: product.sku,
       packLabel: packSize.label,
@@ -102,41 +111,62 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
   const subtotal = Math.round(lines.reduce((sum, l) => sum + l.lineTotal, 0) * 100) / 100;
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
 
-  // Create with a unique reference; retry on the unlikely collision.
+  // Create with a unique reference; retry on the unlikely collision. Stock for
+  // tracked pack sizes is reserved in the same transaction as the order itself.
   let order: { id: string; reference: string; subtotal: number; itemCount: number } | null = null;
   for (let attempt = 0; attempt < 5 && !order; attempt++) {
     const reference = generateOrderReference();
     try {
-      order = await prisma.order.create({
-        data: {
-          reference,
-          status: "pending",
-          customerName: input.customerName,
-          businessName: input.businessName ?? null,
-          mobile: input.mobile,
-          email: input.email ?? null,
-          gstin: input.gstin ?? null,
-          address: input.address,
-          city: input.city,
-          state: input.state,
-          pincode: input.pincode,
-          notes: input.notes ?? null,
-          subtotal,
-          itemCount,
-          clientToken: input.clientToken ?? null,
-          items: { create: lines },
-        },
-        select: { id: true, reference: true, subtotal: true, itemCount: true },
+      order = await prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            reference,
+            status: "pending",
+            customerName: input.customerName,
+            businessName: input.businessName ?? null,
+            mobile: input.mobile,
+            email: input.email ?? null,
+            gstin: input.gstin ?? null,
+            address: input.address,
+            city: input.city,
+            state: input.state,
+            pincode: input.pincode,
+            notes: input.notes ?? null,
+            subtotal,
+            itemCount,
+            clientToken: input.clientToken ?? null,
+            items: { create: lines },
+          },
+          select: { id: true, reference: true, subtotal: true, itemCount: true },
+        });
+
+        for (const line of lines) {
+          const pack = await tx.packSize.findUnique({
+            where: { id: line.packSizeId },
+            select: { stock: true },
+          });
+          if (pack?.stock != null) {
+            const next = Math.max(0, pack.stock - line.quantity);
+            await tx.packSize.update({
+              where: { id: line.packSizeId },
+              data: { stock: next },
+            });
+          }
+        }
+
+        return created;
       });
     } catch (err) {
       const isUniqueViolation =
         err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
       if (!isUniqueViolation) throw err;
+      order = null;
     }
   }
   if (!order) {
     throw new OrderError("Could not allocate an order reference. Please try again.");
   }
+  if (order) revalidateProducts();
 
   // Best-effort admin notification; failure must not fail the order.
   await sendOrderNotificationEmail({
@@ -163,4 +193,59 @@ export async function getOrderByReference(reference: string) {
     include: { items: true },
   });
   return order;
+}
+
+export type OrderTracking = {
+  reference: string;
+  status: string;
+  createdAt: Date;
+  itemCount: number;
+  subtotal: number;
+  city: string;
+  items: { productName: string; packLabel: string; quantity: number }[];
+  events: { status: string; createdAt: Date }[];
+};
+
+/**
+ * Orders belonging to a mobile number, for the public "Track order" page.
+ *
+ * PRIVACY: only the caller-supplied mobile number is matched, and the returned
+ * payload deliberately omits the delivery address, email and GSTIN. The route
+ * that calls this is rate-limited to slow down number enumeration.
+ */
+export async function trackOrdersByMobile(mobile: string): Promise<OrderTracking[]> {
+  const digits = mobile.replace(/\D/g, "").slice(-10);
+  if (!/^[6-9]\d{9}$/.test(digits)) return [];
+
+  const orders = await prisma.order.findMany({
+    where: { mobile: { contains: digits } },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: {
+      items: { select: { productName: true, packLabel: true, quantity: true } },
+      events: { orderBy: { createdAt: "asc" }, select: { status: true, createdAt: true } },
+    },
+  });
+
+  return orders.map((o) => ({
+    reference: o.reference,
+    status: o.status,
+    createdAt: o.createdAt,
+    itemCount: o.itemCount,
+    subtotal: o.subtotal,
+    city: o.city,
+    items: o.items,
+    events: o.events,
+  }));
+}
+
+/** Full order (items + status timeline) for the printable bill page. */
+export async function getOrderForBill(reference: string) {
+  return prisma.order.findUnique({
+    where: { reference },
+    include: {
+      items: true,
+      events: { orderBy: { createdAt: "asc" } },
+    },
+  });
 }

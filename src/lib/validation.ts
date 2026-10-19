@@ -92,6 +92,10 @@ export const packSizeInputSchema = z.object({
   wholesalePrice: z
     .union([z.coerce.number().min(0).max(1_000_000), z.literal(""), z.null()])
     .transform((v) => (v === "" || v === null || Number.isNaN(v) ? null : Number(v))),
+  stock: z
+    .union([z.coerce.number().int().min(0).max(1_000_000), z.literal(""), z.null()])
+    .transform((v) => (v === "" || v === null || Number.isNaN(v) ? null : Number(v)))
+    .default(null),
   active: z.union([z.boolean(), z.literal("true"), z.literal("false")]).transform((v) => v === true || v === "true"),
 });
 

@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
-import { ArrowRight, MessageCircle, MousePointer2 } from "lucide-react";
+import { ArrowRight, Droplets, MessageCircle, MousePointer2, Sparkles } from "lucide-react";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
-const HERO_IMAGES = [
-  { src: "/products/glass-cleaner.svg", alt: "Super Cleaner spray bottle (placeholder image)" },
-  { src: "/products/floor-cleaner.svg", alt: "Super Cleaner floor cleaner jug (placeholder image)" },
-  { src: "/products/car-shampoo.svg", alt: "Super Cleaner car shampoo (placeholder image)" },
-];
+/** Photos shown in the hero cluster. Empty array = branded 3D panels. */
+const HERO_IMAGES: { src: string; alt: string }[] = [];
 
 export function Hero({
   brandName,
@@ -139,17 +136,23 @@ export function Hero({
         </div>
 
         {/* ---------- product cluster ---------- */}
-        <div className="relative mx-auto h-[24rem] w-full max-w-lg sm:h-[28rem] lg:h-[34rem]" aria-hidden={false}>
+        <div
+          className="relative mx-auto h-[24rem] w-full max-w-lg sm:h-[28rem] lg:h-[34rem]"
+          style={{ perspective: "1400px" }}
+          aria-hidden={false}
+        >
           <motion.div
             initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ y: yMain }}
+            style={{ y: yMain, transformStyle: "preserve-3d" }}
             className="absolute inset-x-8 top-6 bottom-0 z-20 sm:inset-x-16"
           >
-            <HeroImageCard
-              src={HERO_IMAGES[1].src}
-              alt={HERO_IMAGES[1].alt}
+            <HeroPanel
+              variant="main"
+              src={HERO_IMAGES[1]?.src}
+              alt={HERO_IMAGES[1]?.alt}
+              brandName={brandName}
               className="h-full w-full rotate-[-2deg] shadow-[0_50px_90px_-40px_rgba(0,0,0,0.75)]"
             />
           </motion.div>
@@ -161,9 +164,11 @@ export function Hero({
             style={{ y: yLeft }}
             className="absolute top-16 -left-2 z-10 w-36 sm:top-24 sm:-left-4 sm:w-44 lg:w-52"
           >
-            <HeroImageCard
-              src={HERO_IMAGES[0].src}
-              alt={HERO_IMAGES[0].alt}
+            <HeroPanel
+              variant="spray"
+              src={HERO_IMAGES[0]?.src}
+              alt={HERO_IMAGES[0]?.alt}
+              brandName={brandName}
               className="shadow-[0_40px_70px_-35px_rgba(0,0,0,0.7)]"
             />
           </motion.div>
@@ -175,9 +180,11 @@ export function Hero({
             style={{ y: yRight }}
             className="absolute right-0 bottom-0 z-30 w-36 sm:right-2 sm:w-44 lg:w-52"
           >
-            <HeroImageCard
-              src={HERO_IMAGES[2].src}
-              alt={HERO_IMAGES[2].alt}
+            <HeroPanel
+              variant="car"
+              src={HERO_IMAGES[2]?.src}
+              alt={HERO_IMAGES[2]?.alt}
+              brandName={brandName}
               className="shadow-[0_40px_70px_-35px_rgba(0,0,0,0.7)]"
             />
           </motion.div>
@@ -222,6 +229,58 @@ function HeroImageCard({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} className="size-full object-cover" />
+    </div>
+  );
+}
+
+/**
+ * Hero tile. Shows a real product photo when one is available, otherwise a
+ * branded 3D glass panel (so the hero never displays a fake product image).
+ */
+function HeroPanel({
+  variant,
+  src,
+  alt,
+  brandName,
+  className,
+}: {
+  variant: "main" | "spray" | "car";
+  src?: string;
+  alt?: string;
+  brandName: string;
+  className?: string;
+}) {
+  if (src) return <HeroImageCard src={src} alt={alt ?? brandName} className={className} />;
+
+  const isMain = variant === "main";
+  const Icon = variant === "spray" ? Droplets : variant === "car" ? Sparkles : Droplets;
+
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col justify-between overflow-hidden rounded-3xl border border-white/15 p-5 text-white",
+        "bg-[linear-gradient(150deg,rgba(255,255,255,0.16),rgba(255,255,255,0.04)_45%,rgba(34,197,94,0.18))]",
+        "backdrop-blur-md [transform-style:preserve-3d]",
+        isMain ? "items-start" : "items-center justify-center gap-3 text-center",
+        className
+      )}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-fresh-500/25 blur-2xl"
+      />
+      <Icon
+        className={cn("relative text-fresh-300 drop-shadow-[0_6px_18px_rgba(34,197,94,0.5)]", isMain ? "size-10" : "size-7")}
+        aria-hidden
+      />
+      <span className={cn("relative font-extrabold tracking-tight", isMain ? "text-2xl" : "text-xs leading-tight")}>
+        {isMain ? brandName : "Photo coming soon"}
+      </span>
+      {isMain && (
+        <span className="relative mt-1 text-xs font-semibold text-white/60">
+          Real product photos are uploaded from the admin dashboard
+        </span>
+      )}
     </div>
   );
 }

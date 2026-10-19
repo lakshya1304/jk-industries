@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ENQUIRY_TYPE_LABELS } from "@/lib/constants";
 import { formatDate, formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 
 export default async function AdminOverviewPage() {
   const [
@@ -59,7 +60,14 @@ export default async function AdminOverviewPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {pendingOrders > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+          <CircleAlert className="size-5 shrink-0" aria-hidden />
+          You have {pendingOrders} order request{pendingOrders === 1 ? "" : "s"} pending confirmation.
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Link
             key={s.label}
@@ -78,6 +86,8 @@ export default async function AdminOverviewPage() {
           </Link>
         ))}
       </div>
+
+      <AnalyticsPanel />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-navy-900/8 bg-white p-5">
@@ -142,13 +152,6 @@ export default async function AdminOverviewPage() {
           )}
         </section>
       </div>
-
-      {pendingOrders > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-          <CircleAlert className="size-5 shrink-0" aria-hidden />
-          You have {pendingOrders} order request{pendingOrders === 1 ? "" : "s"} pending confirmation.
-        </div>
-      )}
     </div>
   );
 }

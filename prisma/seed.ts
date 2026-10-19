@@ -2,6 +2,10 @@
  * Seed script: creates the default admin user, site settings, and an initial
  * product catalogue so the site works end-to-end immediately after setup.
  *
+ * Products are seeded WITHOUT images — add real product photos from the admin
+ * dashboard (Products → Edit → Images). The catalogue shows a neutral
+ * "photo coming soon" panel until a photo is uploaded.
+ *
  * Run with: npm run db:seed
  * Safe to re-run: existing products/settings are updated, nothing is deleted.
  */
@@ -16,13 +20,12 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
-type SeedPack = { label: string; mrp: number; wholesalePrice?: number };
+type SeedPack = { label: string; mrp: number; wholesalePrice?: number; stock?: number };
 type SeedProduct = {
   name: string;
   sku: string;
   description: string;
   usage: string;
-  image: string;
   minOrderQty?: number;
   unitsPerCarton?: number;
   availability?: string;
@@ -38,13 +41,12 @@ const products: SeedProduct[] = [
     description:
       "Floor cleaning liquid for everyday use on tiles, marble and other hard floors. Supplied in retail and bulk pack sizes.",
     usage: "Dilute in water as directed on the label, mop the floor and allow to air dry.",
-    image: "/products/floor-cleaner.svg",
     unitsPerCarton: 20,
     featured: true,
     packSizes: [
-      { label: "500 ml", mrp: 99, wholesalePrice: 79 },
-      { label: "1 litre", mrp: 189, wholesalePrice: 149 },
-      { label: "5 litre", mrp: 749, wholesalePrice: 619 },
+      { label: "500 ml", mrp: 99, wholesalePrice: 79, stock: 120 },
+      { label: "1 litre", mrp: 189, wholesalePrice: 149, stock: 80 },
+      { label: "5 litre", mrp: 749, wholesalePrice: 619, stock: 24 },
     ],
   },
   {
@@ -53,11 +55,10 @@ const products: SeedProduct[] = [
     description:
       "Liquid hand wash in a pump pack. Available in multiple pack sizes for shops and bulk supply.",
     usage: "Pump onto wet hands, lather, rinse with water and dry.",
-    image: "/products/hand-wash.svg",
     unitsPerCarton: 24,
     packSizes: [
-      { label: "200 ml", mrp: 69, wholesalePrice: 54 },
-      { label: "500 ml", mrp: 129, wholesalePrice: 102 },
+      { label: "200 ml", mrp: 69, wholesalePrice: 54, stock: 150 },
+      { label: "500 ml", mrp: 129, wholesalePrice: 102, stock: 90 },
     ],
   },
   {
@@ -66,13 +67,12 @@ const products: SeedProduct[] = [
     description:
       "Dish washing liquid for kitchens and restaurants. Supplied in retail bottles and bulk packs.",
     usage: "Apply a small amount on a sponge or directly on utensils, scrub and rinse with water.",
-    image: "/products/dish-wash.svg",
     unitsPerCarton: 20,
     featured: true,
     packSizes: [
-      { label: "250 ml", mrp: 79, wholesalePrice: 62 },
-      { label: "500 ml", mrp: 129, wholesalePrice: 102 },
-      { label: "1 litre", mrp: 229, wholesalePrice: 182 },
+      { label: "250 ml", mrp: 79, wholesalePrice: 62, stock: 140 },
+      { label: "500 ml", mrp: 129, wholesalePrice: 102, stock: 100 },
+      { label: "1 litre", mrp: 229, wholesalePrice: 182, stock: 65 },
     ],
   },
   {
@@ -81,38 +81,33 @@ const products: SeedProduct[] = [
     description:
       "Spray cleaner for glass, mirrors and other smooth surfaces. Suitable for shops, offices and homes.",
     usage: "Spray onto the surface and wipe clean with a soft, lint-free cloth.",
-    image: "/products/glass-cleaner.svg",
     unitsPerCarton: 12,
     packSizes: [
-      { label: "500 ml", mrp: 149, wholesalePrice: 119 },
-      { label: "1 litre", mrp: 259, wholesalePrice: 209 },
+      { label: "500 ml", mrp: 149, wholesalePrice: 119, stock: 75 },
+      { label: "1 litre", mrp: 259, wholesalePrice: 209, stock: 40 },
     ],
   },
   {
     name: "Super Cleaner Toilet Cleaner",
     sku: "SC-TC-005",
-    description:
-      "Thick liquid toilet cleaner in a neck bottle for controlled application.",
+    description: "Thick liquid toilet cleaner in a neck bottle for controlled application.",
     usage: "Apply under the rim, leave for a few minutes, scrub with a brush and flush.",
-    image: "/products/toilet-cleaner.svg",
     unitsPerCarton: 12,
     featured: true,
     packSizes: [
-      { label: "500 ml", mrp: 119, wholesalePrice: 94 },
-      { label: "1 litre", mrp: 209, wholesalePrice: 165 },
+      { label: "500 ml", mrp: 119, wholesalePrice: 94, stock: 95 },
+      { label: "1 litre", mrp: 209, wholesalePrice: 165, stock: 60 },
     ],
   },
   {
     name: "Super Cleaner Bathroom Cleaner",
     sku: "SC-BC-006",
-    description:
-      "Spray cleaner for bathroom tiles, wash basins and fittings.",
+    description: "Spray cleaner for bathroom tiles, wash basins and fittings.",
     usage: "Spray on the surface, leave briefly, scrub and rinse with water.",
-    image: "/products/bathroom-cleaner.svg",
     unitsPerCarton: 12,
     packSizes: [
-      { label: "500 ml", mrp: 159, wholesalePrice: 125 },
-      { label: "1 litre", mrp: 279, wholesalePrice: 222 },
+      { label: "500 ml", mrp: 159, wholesalePrice: 125, stock: 70 },
+      { label: "1 litre", mrp: 279, wholesalePrice: 222, stock: 45 },
     ],
   },
   {
@@ -121,25 +116,22 @@ const products: SeedProduct[] = [
     description:
       "All-purpose spray cleaner for tables, counters, appliances and other washable surfaces.",
     usage: "Spray on the surface and wipe with a clean cloth. Test on a small area first.",
-    image: "/products/multipurpose-cleaner.svg",
     unitsPerCarton: 12,
     featured: true,
     packSizes: [
-      { label: "500 ml", mrp: 149, wholesalePrice: 118 },
-      { label: "1 litre", mrp: 259, wholesalePrice: 205 },
+      { label: "500 ml", mrp: 149, wholesalePrice: 118, stock: 85 },
+      { label: "1 litre", mrp: 259, wholesalePrice: 205, stock: 50 },
     ],
   },
   {
     name: "Super Cleaner Kitchen Degreaser",
     sku: "SC-KD-008",
-    description:
-      "Spray degreaser for kitchen counters, chimneys, stovetops and exhaust filters.",
+    description: "Spray degreaser for kitchen counters, chimneys, stovetops and exhaust filters.",
     usage: "Spray on the greasy surface, leave for a few minutes, wipe clean and rinse.",
-    image: "/products/kitchen-degreaser.svg",
     unitsPerCarton: 12,
     packSizes: [
-      { label: "500 ml", mrp: 179, wholesalePrice: 142 },
-      { label: "1 litre", mrp: 299, wholesalePrice: 238 },
+      { label: "500 ml", mrp: 179, wholesalePrice: 142, stock: 60 },
+      { label: "1 litre", mrp: 299, wholesalePrice: 238, stock: 35 },
     ],
   },
   {
@@ -147,52 +139,47 @@ const products: SeedProduct[] = [
     sku: "SC-CS-009",
     description:
       "Car wash shampoo for exterior cleaning. Supplied in jug packs for retail and detailing supply.",
-    usage: "Dilute in a bucket of water, wash the vehicle with a sponge or mitt, then rinse with clean water.",
-    image: "/products/car-shampoo.svg",
+    usage:
+      "Dilute in a bucket of water, wash the vehicle with a sponge or mitt, then rinse with clean water.",
     unitsPerCarton: 4,
     featured: true,
     packSizes: [
-      { label: "500 ml", mrp: 199, wholesalePrice: 159 },
-      { label: "1 litre", mrp: 349, wholesalePrice: 279 },
-      { label: "5 litre", mrp: 1499, wholesalePrice: 1249 },
+      { label: "500 ml", mrp: 199, wholesalePrice: 159, stock: 55 },
+      { label: "1 litre", mrp: 349, wholesalePrice: 279, stock: 40 },
+      { label: "5 litre", mrp: 1499, wholesalePrice: 1249, stock: 18 },
     ],
   },
   {
     name: "Super Cleaner Dashboard Polish",
     sku: "SC-DP-010",
-    description:
-      "Interior polish for car dashboards, door trims and plastic panels.",
+    description: "Interior polish for car dashboards, door trims and plastic panels.",
     usage: "Apply a small amount on a soft cloth and wipe over the surface evenly.",
-    image: "/products/dashboard-polish.svg",
     unitsPerCarton: 24,
     packSizes: [
-      { label: "200 ml", mrp: 199, wholesalePrice: 159 },
-      { label: "300 ml", mrp: 269, wholesalePrice: 215 },
+      { label: "200 ml", mrp: 199, wholesalePrice: 159, stock: 65 },
+      { label: "300 ml", mrp: 269, wholesalePrice: 215, stock: 40 },
     ],
   },
   {
     name: "Super Cleaner Tyre Polish",
     sku: "SC-TP-011",
-    description:
-      "Tyre dressing for a clean black finish on tyres and rubber trims.",
+    description: "Tyre dressing for a clean black finish on tyres and rubber trims.",
     usage: "Apply evenly on the tyre sidewall with a cloth or applicator and allow to dry.",
-    image: "/products/tyre-polish.svg",
     unitsPerCarton: 12,
     packSizes: [
-      { label: "300 ml", mrp: 229, wholesalePrice: 182 },
-      { label: "500 ml", mrp: 349, wholesalePrice: 279 },
+      { label: "300 ml", mrp: 229, wholesalePrice: 182, stock: 50 },
+      { label: "500 ml", mrp: 349, wholesalePrice: 279, stock: 30 },
     ],
   },
   {
     name: "Super Cleaner Car Wax",
     sku: "SC-CW-012",
-    description:
-      "Paste car wax for paint protection and gloss on vehicle bodies.",
-    usage: "Apply a thin layer on clean paint with an applicator, allow to haze, then buff with a microfibre cloth.",
-    image: "/products/car-wax.svg",
+    description: "Paste car wax for paint protection and gloss on vehicle bodies.",
+    usage:
+      "Apply a thin layer on clean paint with an applicator, allow to haze, then buff with a microfibre cloth.",
     minOrderQty: 2,
     availability: "on_request",
-    packSizes: [{ label: "200 g", mrp: 449, wholesalePrice: 359 }],
+    packSizes: [{ label: "200 g", mrp: 449, wholesalePrice: 359, stock: 20 }],
   },
 ];
 
@@ -252,45 +239,81 @@ async function main() {
   }
   console.log("Settings initialised.");
 
-  // 3. Products (upsert by SKU)
+  // 3. Products (upsert by SKU). Images are intentionally left empty.
   for (const [index, p] of products.entries()) {
-    await prisma.product.upsert({
+    const existing = await prisma.product.findUnique({
       where: { sku: p.sku },
-      update: {
-        name: p.name,
-        description: p.description,
-        usage: p.usage,
-        images: JSON.stringify([p.image]),
-        availability: p.availability ?? "in_stock",
-        featured: p.featured ?? false,
-        minOrderQty: p.minOrderQty ?? 1,
-        unitsPerCarton: p.unitsPerCarton ?? null,
-        sortOrder: index,
-        active: true,
-      },
-      create: {
-        name: p.name,
-        slug: slugify(p.name),
-        sku: p.sku,
-        description: p.description,
-        usage: p.usage,
-        images: JSON.stringify([p.image]),
-        availability: p.availability ?? "in_stock",
-        featured: p.featured ?? false,
-        minOrderQty: p.minOrderQty ?? 1,
-        unitsPerCarton: p.unitsPerCarton ?? null,
-        sortOrder: index,
-        active: true,
-        packSizes: {
-          create: p.packSizes.map((ps, i) => ({
-            label: ps.label,
-            mrp: ps.mrp,
-            wholesalePrice: ps.wholesalePrice ?? null,
-            sortOrder: i,
-          })),
-        },
-      },
+      include: { packSizes: true },
     });
+
+    if (existing) {
+      await prisma.product.update({
+        where: { id: existing.id },
+        data: {
+          name: p.name,
+          description: p.description,
+          usage: p.usage,
+          availability: p.availability ?? "in_stock",
+          featured: p.featured ?? false,
+          minOrderQty: p.minOrderQty ?? 1,
+          unitsPerCarton: p.unitsPerCarton ?? null,
+          sortOrder: index,
+          active: true,
+        },
+      });
+      // Only top up stock for pack sizes that already exist and have no stock set.
+      for (const [i, ps] of p.packSizes.entries()) {
+        const match = existing.packSizes.find((row) => row.label === ps.label);
+        if (match) {
+          await prisma.packSize.update({
+            where: { id: match.id },
+            data: {
+              mrp: ps.mrp,
+              wholesalePrice: ps.wholesalePrice ?? null,
+              sortOrder: i,
+              stock: match.stock ?? ps.stock ?? null,
+            },
+          });
+        } else {
+          await prisma.packSize.create({
+            data: {
+              productId: existing.id,
+              label: ps.label,
+              mrp: ps.mrp,
+              wholesalePrice: ps.wholesalePrice ?? null,
+              stock: ps.stock ?? null,
+              sortOrder: i,
+            },
+          });
+        }
+      }
+    } else {
+      await prisma.product.create({
+        data: {
+          name: p.name,
+          slug: slugify(p.name),
+          sku: p.sku,
+          description: p.description,
+          usage: p.usage,
+          images: "[]",
+          availability: p.availability ?? "in_stock",
+          featured: p.featured ?? false,
+          minOrderQty: p.minOrderQty ?? 1,
+          unitsPerCarton: p.unitsPerCarton ?? null,
+          sortOrder: index,
+          active: true,
+          packSizes: {
+            create: p.packSizes.map((ps, i) => ({
+              label: ps.label,
+              mrp: ps.mrp,
+              wholesalePrice: ps.wholesalePrice ?? null,
+              stock: ps.stock ?? null,
+              sortOrder: i,
+            })),
+          },
+        },
+      });
+    }
   }
   console.log(`${products.length} products seeded.`);
 }

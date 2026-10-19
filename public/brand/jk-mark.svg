@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="JK Industries logo">
+  <defs>
+    <linearGradient id="jkBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12294a"/>
+      <stop offset="0.55" stop-color="#0b1f3a"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+    <linearGradient id="jkShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#jkBg)"/>
+  <rect width="64" height="32" rx="17" fill="url(#jkShine)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- J -->
+    <path d="M27 17 V35 a8 8 0 0 1 -16 0"/>
+    <!-- K -->
+    <path d="M39 17 V47"/>
+    <path d="M52 17 L41 32 L52 47"/>
+  </g>
+  <circle cx="49.5" cy="15.5" r="3.6" fill="#22c55e"/>
+</svg>

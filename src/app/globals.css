@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Dark mode strategy: a `.dark` class on <html> (set by ThemeProvider) flips a
+ * small set of CSS variables. Because every Tailwind colour utility compiles to
+ * `var(--color-*)`, overriding those variables re-themes the whole app without
+ * touching individual components. A `dark:` variant is also available for the
+ * few places that need explicit control.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ------------------------------------------------------------------ */
 /* Design system — Super Cleaner / JK Industries                       */
 /* ------------------------------------------------------------------ */
@@ -78,6 +87,132 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/*
+ * Dark theme.
+ *
+ * The navy-50…950 scale doubles as both "surfaces" (hero, footer, sidebar) and
+ * "text/primary-button" colours, so flipping the whole scale would break the
+ * dark surfaces. Instead the base tokens stay put and a handful of targeted
+ * overrides re-map the light surfaces and text colours used by cards, panels,
+ * inputs and body copy. `dark:` utilities remain available for one-offs.
+ */
+html.dark {
+  --color-surface: #070f1d;
+}
+
+.dark {
+  /* Card / panel / input backgrounds */
+  --color-white: #101c31;
+  --color-navy-50: #16233a;
+  --color-navy-100: #1e2c46;
+  --color-fresh-50: #0f2a1c;
+  --color-fresh-100: #123a24;
+  /* Body copy */
+  --color-ink: #eaf0fb;
+  --color-ink-soft: #b3c1d6;
+  --color-ink-mute: #8ea1bb;
+}
+
+.dark .text-navy-900 {
+  color: #eaf0fb;
+}
+
+.dark .text-navy-800 {
+  color: #d6e1f1;
+}
+
+.dark .text-navy-700 {
+  color: #c3d1e6;
+}
+
+.dark .text-navy-600 {
+  color: #aebfd8;
+}
+
+.dark .text-navy-500 {
+  color: #9db0cd;
+}
+
+/* `text-white` must stay white — it is used on dark navy/green surfaces that do
+   not change between themes, even though `bg-white` becomes a dark card. */
+.dark .text-white {
+  color: #ffffff;
+}
+
+.dark .placeholder\:text-slate-400::placeholder {
+  color: #7c8dab;
+}
+
+.dark .bg-navy-50\/40 {
+  background-color: rgb(22 35 58 / 0.4);
+}
+
+.dark .bg-navy-50\/60 {
+  background-color: rgb(22 35 58 / 0.6);
+}
+
+.dark .bg-white\/90 {
+  background-color: rgb(16 28 49 / 0.92);
+}
+
+/* Status chips & badges: keep the hue but tone the surface down for dark mode */
+.dark .bg-amber-50 {
+  background-color: rgb(120 53 15 / 0.28);
+}
+
+.dark .text-amber-700,
+.dark .text-amber-800 {
+  color: #fcd34d;
+}
+
+.dark .bg-red-50 {
+  background-color: rgb(127 29 29 / 0.3);
+}
+
+.dark .text-red-600,
+.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e2c46;
+}
+
+.dark .text-slate-600 {
+  color: #c3d1e6;
+}
+
+.dark .bg-fresh-50 {
+  background-color: rgb(20 83 45 / 0.32);
+}
+
+.dark .text-fresh-700 {
+  color: #4ade80;
+}
+
+.dark .border-navy-900\/8,
+.dark .border-navy-900\/6,
+.dark .border-navy-900\/10,
+.dark .border-navy-900\/12,
+.dark .border-navy-900\/15 {
+  border-color: rgb(255 255 255 / 0.12);
+}
+
+.dark .divide-navy-900\/6 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-navy-900\/8 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 255 255 / 0.1);
+}
+
+/* Slightly lift the card shadow so panels read against the dark page */
+.dark .shadow-\[0_1px_2px_rgba\(11\,31\,58\,0\.04\)\] {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
 
 body {
@@ -105,6 +240,10 @@ body {
   -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
+.dark .glass {
+  background-color: rgb(9 17 31 / 0.7);
+}
+
 .glass-dark {
   background-color: rgb(6 15 29 / 0.45);
   backdrop-filter: blur(14px) saturate(130%);
@@ -121,6 +260,16 @@ body {
   );
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    100deg,
+    #16233a 8%,
+    #1d2c47 18%,
+    #16233a 33%
+  );
+  background-size: 200% 100%;
 }
 
 /* Section rhythm */

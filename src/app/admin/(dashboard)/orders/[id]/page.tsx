@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Mail, MapPin, MessageCircle, Phone, ReceiptText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { formatDate, formatINR } from "@/lib/utils";
@@ -38,9 +38,18 @@ export default async function AdminOrderDetailPage({
           </h1>
           <p className="mt-1 text-sm text-ink-mute">Received {formatDate(order.createdAt)}</p>
         </div>
-        <Badge tone={order.status === "pending" ? "warning" : order.status === "cancelled" ? "danger" : order.status === "delivered" ? "success" : "navy"}>
-          {ORDER_STATUS_LABELS[order.status] ?? order.status}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/admin/orders/${order.id}/bill`}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-navy-900/15 px-4 text-sm font-bold text-navy-900 transition-colors hover:border-navy-900/40 hover:bg-navy-50"
+          >
+            <ReceiptText className="size-4" aria-hidden />
+            Print bill
+          </Link>
+          <Badge tone={order.status === "pending" ? "warning" : order.status === "cancelled" ? "danger" : order.status === "delivered" ? "success" : "navy"}>
+            {ORDER_STATUS_LABELS[order.status] ?? order.status}
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">

@@ -3,29 +3,34 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { NoImage } from "@/components/ui/NoImage";
 
 /** Image gallery with animated transitions between images. */
 export function ProductGallery({ images, name }: { images: string[]; name: string }) {
-  const list = images.length > 0 ? images : ["/products/floor-cleaner.svg"];
+  const list = images;
   const [index, setIndex] = useState(0);
-  const current = list[Math.min(index, list.length - 1)];
+  const current = list.length > 0 ? list[Math.min(index, list.length - 1)] : null;
 
   return (
     <div className="space-y-3">
       <div className="relative aspect-4/5 overflow-hidden rounded-3xl border border-navy-900/8 bg-navy-50">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.985 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={current} alt={name} className="size-full object-cover" />
-          </motion.div>
-        </AnimatePresence>
+        {current ? (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.985 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={current} alt={name} className="size-full object-cover" />
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <NoImage label="Photo coming soon" />
+        )}
       </div>
 
       {list.length > 1 && (

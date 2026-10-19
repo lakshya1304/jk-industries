@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
+import { NoImage } from "@/components/ui/NoImage";
 import { formatINR } from "@/lib/utils";
 import { cartEnquiryMessage, waLink } from "@/lib/whatsapp";
 
@@ -124,12 +125,18 @@ export function CartDrawer({
                             className="flex gap-3 py-4"
                           >
                             <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-navy-50">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={item.image || "/products/floor-cleaner.svg"}
-                                alt=""
-                                className="size-full object-cover"
-                              />
+                              {item.image ? (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={item.image}
+                                    alt=""
+                                    className="size-full object-cover"
+                                  />
+                                </>
+                              ) : (
+                                <NoImage label={item.name} compact />
+                              )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-2">

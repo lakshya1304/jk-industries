@@ -45,6 +45,7 @@ model PackSize {
   label          String // e.g. "500 ml"
   mrp            Float
   wholesalePrice Float?
+  stock          Int? // null = stock not tracked for this pack
   active         Boolean @default(true)
   sortOrder      Int     @default(0)
 
@@ -52,27 +53,27 @@ model PackSize {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  reference    String      @unique
-  status       String      @default("pending") // pending | confirmed | processing | shipped | delivered | cancelled
-  customerName String
-  businessName String?
-  mobile       String
-  email        String?
-  gstin        String?
-  address      String
-  city         String
-  state        String
-  pincode      String
-  notes        String?
+  id            String       @id @default(cuid())
+  reference     String       @unique
+  status        String       @default("pending") // pending | confirmed | processing | shipped | delivered | cancelled
+  customerName  String
+  businessName  String?
+  mobile        String
+  email         String?
+  gstin         String?
+  address       String
+  city          String
+  state         String
+  pincode       String
+  notes         String?
   internalNotes String? // staff-only notes, never shown to customers
-  subtotal     Float
-  itemCount    Int
-  clientToken  String? // idempotency token to prevent duplicate submissions
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  items        OrderItem[]
-  events       OrderEvent[]
+  subtotal      Float
+  itemCount     Int
+  clientToken   String? // idempotency token to prevent duplicate submissions
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  items         OrderItem[]
+  events        OrderEvent[]
 
   @@index([status])
   @@index([createdAt])
@@ -96,17 +97,18 @@ model OrderEvent {
 // Line items snapshot product/price data at order time so historical orders
 // are unaffected by later catalogue changes.
 model OrderItem {
-  id             String @id @default(cuid())
-  orderId        String
-  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId      String?
-  productName    String
-  sku            String
-  packLabel      String
-  unitMrp        Float
-  unitWholesale  Float?
-  quantity       Int
-  lineTotal      Float
+  id            String  @id @default(cuid())
+  orderId       String
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  packSizeId    String? // used to reserve/restore stock
+  productName   String
+  sku           String
+  packLabel     String
+  unitMrp       Float
+  unitWholesale Float?
+  quantity      Int
+  lineTotal     Float
 
   @@index([orderId])
 }

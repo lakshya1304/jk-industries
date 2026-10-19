@@ -36,6 +36,7 @@ export default async function EditProductPage({
       label: p.label,
       mrp: p.mrp,
       wholesalePrice: p.wholesalePrice,
+      stock: p.stock,
       active: p.active,
       sortOrder: p.sortOrder,
     })),

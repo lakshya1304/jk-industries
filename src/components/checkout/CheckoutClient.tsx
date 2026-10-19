@@ -9,6 +9,7 @@ import { useCart } from "@/components/cart/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
+import { NoImage } from "@/components/ui/NoImage";
 import { INDIAN_STATES } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
 import { orderRequestSchema } from "@/lib/validation";
@@ -165,8 +166,14 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                   className="flex items-center gap-3 py-4"
                 >
                   <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-navy-50">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.image || "/products/floor-cleaner.svg"} alt="" className="size-full object-cover" />
+                    {item.image ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.image} alt="" className="size-full object-cover" />
+                      </>
+                    ) : (
+                      <NoImage label={item.name} compact />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link

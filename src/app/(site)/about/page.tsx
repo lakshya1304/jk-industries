@@ -4,6 +4,7 @@ import { ArrowRight, Boxes, MessageCircle, Store, Truck } from "lucide-react";
 import { getActiveProducts } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { Reveal } from "@/components/ui/Reveal";
+import { NoImage } from "@/components/ui/NoImage";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
@@ -83,13 +84,21 @@ export default async function AboutPage() {
                   key={product.id}
                   className="overflow-hidden rounded-2xl border border-navy-900/8 bg-navy-50 shadow-[0_24px_50px_-30px_rgba(11,31,58,0.45)]"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={product.images[0] ?? "/products/floor-cleaner.svg"}
-                    alt={product.name}
-                    loading="lazy"
-                    className={`w-full object-cover ${i % 2 === 0 ? "aspect-3/4" : "aspect-3/4 mt-6"}`}
-                  />
+                  {product.images[0] ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        loading="lazy"
+                        className={`w-full object-cover ${i % 2 === 0 ? "aspect-3/4" : "aspect-3/4 mt-6"}`}
+                      />
+                    </>
+                  ) : (
+                    <div className={`w-full ${i % 2 === 0 ? "aspect-3/4" : "aspect-3/4 mt-6"}`}>
+                      <NoImage label={product.name} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

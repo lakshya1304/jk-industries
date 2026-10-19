@@ -7,6 +7,7 @@ import type { SiteSettings } from "@/lib/types";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/products", label: "All Products" },
+  { href: "/track", label: "Track Order" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
 ];

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, PackageSearch, ReceiptText } from "lucide-react";
 import { getOrderByReference } from "@/lib/orders";
 import { getSettings } from "@/lib/settings";
 import { ConfirmationAnimation } from "@/components/order/ConfirmationAnimation";
@@ -105,6 +105,23 @@ async function Confirmation({ params }: { params: Params }) {
             className="inline-flex h-12 items-center justify-center rounded-full border border-navy-900/15 px-6 text-sm font-bold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50"
           >
             Continue Shopping
+          </Link>
+        </div>
+
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+          <Link
+            href={`/track?mobile=${encodeURIComponent(order.mobile)}`}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-navy-900/15 px-6 text-sm font-bold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50"
+          >
+            <PackageSearch className="size-4.5" aria-hidden />
+            Track this order
+          </Link>
+          <Link
+            href={`/bill/${order.reference}`}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-navy-900/15 px-6 text-sm font-bold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50"
+          >
+            <ReceiptText className="size-4.5" aria-hidden />
+            View bill
           </Link>
         </div>
       </div>

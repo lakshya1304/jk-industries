@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { cacheLife, cacheTag, revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { parseImages } from "@/lib/utils";
 import type { PackSizeDTO, ProductDTO } from "@/lib/types";
@@ -18,7 +18,7 @@ function toDTO(p: {
   availability: string;
   featured: boolean;
   showPrice: boolean;
-  packSizes: { id: string; label: string; mrp: number; wholesalePrice: number | null; active: boolean }[];
+  packSizes: { id: string; label: string; mrp: number; wholesalePrice: number | null; stock: number | null; active: boolean }[];
 }): ProductDTO {
   return {
     id: p.id,
@@ -41,6 +41,7 @@ function toDTO(p: {
           label: ps.label,
           mrp: ps.mrp,
           wholesalePrice: ps.wholesalePrice,
+          stock: ps.stock,
           active: ps.active,
         })
       ),
@@ -86,4 +87,10 @@ export async function getProductBySlug(slug: string): Promise<ProductDTO | null>
 /** Invalidate cached product data after admin mutations. */
 export function revalidateProducts() {
   revalidateTag(PRODUCTS_TAG, "max");
+  // Product images / names also appear on prerendered pages (homepage featured
+  // grid, catalogue, product detail). Refresh those paths so an image change is
+  // visible immediately, not just after the cache window expires.
+  revalidatePath("/", "page");
+  revalidatePath("/products", "page");
+  revalidatePath("/products/[slug]", "page");
 }

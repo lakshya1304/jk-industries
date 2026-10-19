@@ -58,6 +58,24 @@ export function ImageUploader({
     setUrlValue("");
   }
 
+  /**
+   * Remove an image. Images uploaded through this dashboard are also deleted
+   * from storage (Vercel Blob or public/uploads); external pasted URLs are just
+   * dropped from the list.
+   */
+  async function removeImage(src: string) {
+    onChange(images.filter((s) => s !== src));
+    const ours =
+      src.startsWith("/uploads/") ||
+      /^https:\/\/[\w-]+\.public\.blob\.vercel-storage\.com\//.test(src);
+    if (!ours) return;
+    try {
+      await fetch(`/api/admin/upload?url=${encodeURIComponent(src)}`, { method: "DELETE" });
+    } catch {
+      /* the image is already removed from the product; storage cleanup is best-effort */
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
@@ -67,9 +85,10 @@ export function ImageUploader({
             <img src={src} alt="" className="size-full object-cover" />
             <button
               type="button"
-              onClick={() => onChange(images.filter((_, idx) => idx !== i))}
-              aria-label="Remove image"
-              className="absolute right-1.5 top-1.5 rounded-full bg-white/90 p-1.5 text-red-600 opacity-0 shadow transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              onClick={() => removeImage(src)}
+              aria-label="Delete image"
+              title="Delete image"
+              className="absolute right-1.5 top-1.5 rounded-full bg-white/90 p-1.5 text-red-600 shadow transition-opacity hover:bg-white group-hover:opacity-100 focus-visible:opacity-100"
             >
               <Trash2 className="size-3.5" aria-hidden />
             </button>
@@ -94,7 +113,7 @@ export function ImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
@@ -119,7 +138,8 @@ export function ImageUploader({
 
       {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
       <p className="text-xs text-ink-mute">
-        JPG, PNG, WEBP or AVIF up to 5 MB. The first image is used as the main photo.
+        JPG, PNG, WEBP, AVIF or GIF up to 10 MB. The first image is used as the main photo.
+        Deleting an image here also removes it from storage.
       </p>
     </div>
   );

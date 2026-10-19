@@ -61,6 +61,7 @@ export async function createProduct(input: ProductInput) {
           label: p.label,
           mrp: p.mrp,
           wholesalePrice: p.wholesalePrice ?? null,
+          stock: p.stock ?? null,
           active: p.active,
           sortOrder: i,
         })),
@@ -99,6 +100,7 @@ export async function updateProduct(id: string, input: ProductInput) {
         label: pack.label,
         mrp: pack.mrp,
         wholesalePrice: pack.wholesalePrice ?? null,
+        stock: pack.stock ?? null,
         active: pack.active,
         sortOrder: index,
       };

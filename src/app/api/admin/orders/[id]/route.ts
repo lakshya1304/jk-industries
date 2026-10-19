@@ -2,9 +2,30 @@ import { getAdminApiSession, unauthorizedResponse, readJson } from "@/lib/api-au
 import { orderStatusSchema } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
+import { revalidateProducts } from "@/lib/products";
 import { manualWhatsAppLink, sendStatusNotification } from "@/lib/notify";
 
 type Ctx = { params: Promise<{ id: string }> };
+
+/** Put the reserved quantity of every tracked pack size back into stock. */
+async function releaseOrderStock(orderId: string) {
+  const items = await prisma.orderItem.findMany({
+    where: { orderId },
+    select: { packSizeId: true, quantity: true },
+  });
+  for (const item of items) {
+    if (!item.packSizeId) continue;
+    const pack = await prisma.packSize.findUnique({
+      where: { id: item.packSizeId },
+      select: { stock: true },
+    });
+    if (pack?.stock == null) continue;
+    await prisma.packSize.update({
+      where: { id: item.packSizeId },
+      data: { stock: pack.stock + item.quantity },
+    });
+  }
+}
 
 /**
  * PATCH /api/admin/orders/[id] — update status and/or internal notes (admin only).
@@ -42,6 +63,17 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
     if (!statusChanged) {
       return Response.json({ ok: true, status: order.status, changed: false, notification: null });
+    }
+
+    // Stock moves back to inventory when an order is cancelled (it was reserved
+    // when the request was submitted).
+    if (parsed.data.status === "cancelled" && existing.status !== "cancelled") {
+      try {
+        await releaseOrderStock(order.id);
+        revalidateProducts();
+      } catch (err) {
+        console.error("[orders] could not restore stock:", err);
+      }
     }
 
     // Best-effort customer notification — never blocks the status update.

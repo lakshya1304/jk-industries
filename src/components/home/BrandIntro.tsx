@@ -27,26 +27,18 @@ export async function BrandIntro() {
   return (
     <section className="section overflow-hidden bg-white" aria-labelledby="brand-intro-heading">
       <div className="container-page grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
-        {/* image collage */}
+        {/* brand collage */}
         <Reveal className="relative order-2 lg:order-1" y={36}>
-          <div className="relative mx-auto max-w-lg">
-            <div className="overflow-hidden rounded-3xl border border-navy-900/8 bg-navy-50 shadow-[0_40px_80px_-45px_rgba(11,31,58,0.5)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/products/multipurpose-cleaner.svg"
-                alt="Super Cleaner multipurpose product range (placeholder image)"
-                loading="lazy"
-                className="aspect-4/3 w-full object-cover"
-              />
-            </div>
-            <div className="absolute -right-4 -bottom-10 w-40 overflow-hidden rounded-2xl border-4 border-white shadow-[0_30px_60px_-30px_rgba(11,31,58,0.55)] sm:-right-8 sm:w-52">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/products/tyre-polish.svg"
-                alt="Super Cleaner automotive care product (placeholder image)"
-                loading="lazy"
-                className="aspect-3/4 w-full object-cover"
-              />
+          <div className="relative mx-auto max-w-lg" style={{ perspective: "1200px" }}>
+            <div className="flex min-h-72 flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-navy-900/8 bg-[linear-gradient(140deg,var(--color-navy-900),var(--color-navy-800)_55%,var(--color-fresh-700))] p-8 text-center shadow-[0_40px_80px_-45px_rgba(11,31,58,0.6)]">
+              <span className="grid size-16 place-items-center rounded-2xl bg-white/10 text-fresh-300 ring-1 ring-white/20 backdrop-blur">
+                <Boxes className="size-8" aria-hidden />
+              </span>
+              <p className="text-lg font-extrabold text-white">{settings.brandName} range</p>
+              <p className="max-w-xs text-sm text-white/70">
+                Cleaning &amp; automotive care products from {settings.manufacturerName}. Product
+                photographs are being prepared — real photos appear here once uploaded.
+              </p>
             </div>
             <div className="absolute -top-5 -left-3 rounded-2xl border border-navy-900/8 bg-white px-4 py-3 shadow-[0_20px_40px_-24px_rgba(11,31,58,0.45)] sm:-left-6">
               <p className="text-[10px] font-bold tracking-[0.16em] text-fresh-700 uppercase">

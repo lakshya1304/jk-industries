@@ -5,6 +5,7 @@ export type PackSizeDTO = {
   label: string;
   mrp: number;
   wholesalePrice: number | null;
+  stock: number | null;
   active: boolean;
 };
 

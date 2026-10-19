@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Text-based brand mark. Replace with the real logo by uploading it in the
- * admin dashboard later — or swap this component for next/image.
+ * Brand lockup: the JK Industries monogram + the current brand/product name.
+ * The mark is a real SVG asset (`/brand/jk-mark.svg`) so it stays crisp at any
+ * size and can be reused for the favicon and printed bills.
  */
 export function BrandLogo({
   brandName,
@@ -18,29 +19,19 @@ export function BrandLogo({
   const light = tone === "light";
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <span className="relative grid size-9 place-items-center overflow-hidden rounded-xl bg-fresh-600 shadow-[0_6px_16px_-8px_rgba(22,163,74,0.9)]">
-        {/* water droplet */}
-        <svg viewBox="0 0 24 24" className="size-5 text-white" aria-hidden fill="none">
-          <path
-            d="M12 3.2c3.6 4.2 6 7.3 6 10.4a6 6 0 1 1-12 0c0-3.1 2.4-6.2 6-10.4Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M9.4 13.9a2.7 2.7 0 0 0 2.7 2.7"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            opacity="0.85"
-          />
-        </svg>
+      <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl shadow-[0_8px_20px_-10px_rgba(11,31,58,0.85)] ring-1 ring-black/5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/jk-mark.svg"
+          alt={`${manufacturerName} logo`}
+          className="size-full"
+        />
       </span>
       <span className="leading-none">
         <span
           className={cn(
             "block text-[1.02rem] font-extrabold tracking-tight",
-            light ? "text-white" : "text-navy-900"
+            light ? "text-white" : "text-navy-900",
           )}
         >
           {brandName}
@@ -48,7 +39,7 @@ export function BrandLogo({
         <span
           className={cn(
             "mt-0.5 block text-[10px] font-semibold tracking-[0.14em] uppercase",
-            light ? "text-white/60" : "text-ink-mute"
+            light ? "text-white/60" : "text-ink-mute",
           )}
         >
           by {manufacturerName}

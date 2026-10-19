@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/Field";
 import { adminSettingsSchema } from "@/lib/validation";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { SiteSettings, WhyChooseItem } from "@/lib/types";
 
 type Errors = Record<string, string>;
@@ -125,7 +126,10 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       </section>
 
       <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
-        <h2 className="text-base font-extrabold text-navy-900">Contact</h2>
+        <h2 className="text-base font-extrabold text-navy-900">Contact details</h2>
+        <p className="-mt-2 text-xs text-ink-mute">
+          Shown on the website, WhatsApp links and customer emails.
+        </p>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="WhatsApp number" htmlFor="whatsappNumber" required error={errors.whatsappNumber} hint="With country code, e.g. 919812345678.">
             <Input id="whatsappNumber" inputMode="tel" value={form.whatsappNumber} onChange={set("whatsappNumber")} invalid={Boolean(errors.whatsappNumber)} />
@@ -133,14 +137,22 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           <Field label="Contact phone" htmlFor="contactPhone" error={errors.contactPhone}>
             <Input id="contactPhone" inputMode="tel" value={form.contactPhone} onChange={set("contactPhone")} invalid={Boolean(errors.contactPhone)} />
           </Field>
-          <Field label="Contact email" htmlFor="contactEmail" error={errors.contactEmail}>
+          <Field label="Contact email" htmlFor="contactEmail" error={errors.contactEmail} className="sm:col-span-2">
             <Input id="contactEmail" type="email" value={form.contactEmail} onChange={set("contactEmail")} invalid={Boolean(errors.contactEmail)} />
           </Field>
-          <Field label="GSTIN" htmlFor="gstin" error={errors.gstin}>
-            <Input id="gstin" value={form.gstin} onChange={set("gstin")} invalid={Boolean(errors.gstin)} />
-          </Field>
+        </div>
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
+        <div>
+          <h2 className="text-base font-extrabold text-navy-900">Business address</h2>
+          <p className="mt-1 text-xs text-ink-mute">
+            Used as the manufacturer address on the website contact page and on printed order bills.
+          </p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Address line" htmlFor="addressLine" error={errors.addressLine} className="sm:col-span-2">
-            <Input id="addressLine" value={form.addressLine} onChange={set("addressLine")} invalid={Boolean(errors.addressLine)} />
+            <Textarea id="addressLine" value={form.addressLine} onChange={set("addressLine")} invalid={Boolean(errors.addressLine)} rows={2} placeholder="Building / street / area" />
           </Field>
           <Field label="City" htmlFor="city" error={errors.city}>
             <Input id="city" value={form.city} onChange={set("city")} invalid={Boolean(errors.city)} />
@@ -150,6 +162,9 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           </Field>
           <Field label="PIN code" htmlFor="pincode" error={errors.pincode}>
             <Input id="pincode" inputMode="numeric" value={form.pincode} onChange={set("pincode")} invalid={Boolean(errors.pincode)} />
+          </Field>
+          <Field label="GSTIN" htmlFor="gstin" error={errors.gstin} hint="Shown on bills when filled.">
+            <Input id="gstin" value={form.gstin} onChange={set("gstin")} invalid={Boolean(errors.gstin)} />
           </Field>
         </div>
       </section>
@@ -233,6 +248,17 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           Wholesale pricing is advisory and confirmed by your team. Taxes and shipping are agreed
           at order confirmation — there is no fixed tax or shipping configuration in this MVP.
         </p>
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
+        <div>
+          <h2 className="text-base font-extrabold text-navy-900">Appearance</h2>
+          <p className="mt-1 text-xs text-ink-mute">
+            Choose how the site looks. This is saved in your browser and applies to the storefront
+            and this dashboard.
+          </p>
+        </div>
+        <ThemeToggle variant="inline" />
       </section>
 
       <section className="space-y-5 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">

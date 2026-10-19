@@ -17,12 +17,13 @@ type PackDraft = {
   label: string;
   mrp: string;
   wholesalePrice: string;
+  stock: string;
   active: boolean;
 };
 
 type FieldErrors = Record<string, string>;
 
-const emptyPack: PackDraft = { label: "", mrp: "", wholesalePrice: "", active: true };
+const emptyPack: PackDraft = { label: "", mrp: "", wholesalePrice: "", stock: "", active: true };
 
 export function ProductForm({ product }: { product?: AdminProduct }) {
   const router = useRouter();
@@ -49,6 +50,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           label: p.label,
           mrp: String(p.mrp),
           wholesalePrice: p.wholesalePrice != null ? String(p.wholesalePrice) : "",
+          stock: p.stock != null ? String(p.stock) : "",
           active: p.active,
         }))
       : [{ ...emptyPack }]
@@ -88,6 +90,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         label: p.label,
         mrp: p.mrp === "" ? 0 : Number(p.mrp),
         wholesalePrice: p.wholesalePrice === "" ? null : Number(p.wholesalePrice),
+        stock: p.stock === "" ? null : Number(p.stock),
         active: p.active,
       })),
     };
@@ -195,7 +198,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
                   exit={{ opacity: 0 }}
                   className="rounded-xl border border-navy-900/8 bg-navy-50/40 p-3"
                 >
-                  <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_auto] sm:items-end">
+                  <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_1fr_auto] sm:items-end">
                     <Field label="Pack size" htmlFor={`pack-label-${index}`} required error={errors[`packSizes.${index}.label`]}>
                       <Input id={`pack-label-${index}`} value={pack.label} onChange={(e) => setPack(index, { label: e.target.value })} placeholder="500 ml" />
                     </Field>
@@ -204,6 +207,9 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
                     </Field>
                     <Field label="Wholesale (₹)" htmlFor={`pack-wholesale-${index}`} error={errors[`packSizes.${index}.wholesalePrice`]}>
                       <Input id={`pack-wholesale-${index}`} inputMode="decimal" value={pack.wholesalePrice} onChange={(e) => setPack(index, { wholesalePrice: e.target.value })} placeholder="optional" />
+                    </Field>
+                    <Field label="Stock" htmlFor={`pack-stock-${index}`} error={errors[`packSizes.${index}.stock`]} hint="Blank = not tracked">
+                      <Input id={`pack-stock-${index}`} inputMode="numeric" value={pack.stock} onChange={(e) => setPack(index, { stock: e.target.value })} placeholder="optional" />
                     </Field>
                     <button
                       type="button"

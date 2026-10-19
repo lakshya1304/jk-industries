@@ -7,12 +7,14 @@ import { useEffect, useState } from "react";
 import { Menu, MessageCircle, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/products", label: "All Products" },
+  { href: "/track", label: "Track Order" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
 ];
@@ -111,7 +113,7 @@ export function Navbar({
           })}
         </ul>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <ButtonLike
             href={whatsappHref}
             className={cn(
@@ -125,6 +127,8 @@ export function Navbar({
             <MessageCircle className="size-4" aria-hidden />
             WhatsApp
           </ButtonLike>
+
+          <ThemeToggle className={overHero ? "[&>button]:text-white [&>button:hover]:bg-white/10" : undefined} />
 
           <button
             type="button"
@@ -207,6 +211,15 @@ export function Navbar({
                   </Link>
                 </motion.li>
               ))}
+              <motion.li
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.28, duration: 0.35 }}
+                className="flex items-center justify-between rounded-xl px-4 py-3"
+              >
+                <span className="text-sm font-bold text-white/60">Appearance</span>
+                <ThemeToggle variant="inline" className="border-white/15 bg-white/5 [&_button]:text-white/80" />
+              </motion.li>
               <motion.li
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
