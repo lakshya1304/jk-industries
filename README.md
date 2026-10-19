@@ -286,7 +286,7 @@ Public reads are cached with Next.js Cache Components (`'use cache'` + `cacheLif
 
 Things to address before or soon after launch:
 
-1. **Images are stored on the local filesystem** (`public/uploads/`). That works on a persistent server, but **not on read-only serverless platforms** — swap `src/app/api/admin/upload/route.ts` for object storage (S3, Cloudinary, UploadThing) when you deploy there.
+1. **Image uploads need a Blob store on serverless.** The upload endpoint automatically uses **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is present (create one in Vercel → Storage), and falls back to `public/uploads/` on local/VPS hosting. Product photos on the live site therefore live in Blob storage.
 2. **Rate limiting is per-instance** (see above).
 3. **Email is optional.** Without `EMAIL_API_KEY`/`EMAIL_TO`, order notifications are skipped silently — orders still save. Failures are logged and never fail an order.
 4. **Automatic WhatsApp/SMS to customers is optional too.** Without Meta or SMS-provider credentials the admin sends each status message with one click from the order page (a prefilled WhatsApp button) — messages are never claimed as delivered.
@@ -335,7 +335,7 @@ Checklist:
 - [ ] Admin password changed from the default.
 - [ ] `.env` never committed.
 - [ ] Postgres `prisma migrate deploy` run for the release.
-- [ ] Persistent filesystem **or** object storage for uploads.
+- [ ] Persistent filesystem **or** a Vercel Blob store for uploads (Storage tab).
 - [ ] Real products, images, WhatsApp number, address and GSTIN entered in the dashboard.
 - [ ] Privacy / Terms / Shipping pages reviewed.
 - [ ] Optional email provider configured.
