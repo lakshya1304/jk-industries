@@ -85,7 +85,10 @@ npm install
 
 # 2. Configure environment
 cp .env.example .env
-#    - set DATABASE_URL="file:./dev.db"        (SQLite, zero setup)
+#    - set DATABASE_URL to your PostgreSQL URL
+#      (the project is pre-configured for the live Prisma Postgres DB;
+#       for a zero-setup SQLite sandbox, set provider = "sqlite" in
+#       prisma/schema.prisma and DATABASE_URL="file:./dev.db")
 #    - generate AUTH_SECRET:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 #    - optionally set ADMIN_EMAIL / ADMIN_PASSWORD (see below)
@@ -167,19 +170,15 @@ Site content — brand name, WhatsApp number, email, address, GSTIN, hero copy, 
 
 ## Switching from SQLite to PostgreSQL
 
-The schema deliberately avoids SQLite-only features (no enums, no `Json` columns), so it moves to Postgres unchanged:
+The provider is already set to `postgresql` for production. The schema avoids SQLite-only features (no enums, no `Json` columns) so it works on both providers unchanged.
 
-1. In `prisma/schema.prisma`, change `provider = "sqlite"` → `provider = "postgresql"`.
-2. Set `DATABASE_URL="postgresql://user:password@host:5432/supercleaner?schema=public"`.
-3. Create a migration history and apply it:
+**Zero-setup SQLite sandbox** (optional — for local experiments without Postgres):
 
-   ```bash
-   npx prisma migrate dev --name init
-   npx prisma migrate deploy   # on the server
-   npm run db:seed
-   ```
+1. In `prisma/schema.prisma`, change `provider = "postgresql"` → `provider = "sqlite"`.
+2. Set `DATABASE_URL="file:./dev.db"`.
+3. Run `npm run db:push && npm run db:seed`.
 
-Locally you keep using `npm run db:push` (a migration history is not required for SQLite dev).
+**PostgreSQL** (production): just set `DATABASE_URL` and run `npm run db:push && npm run db:seed`.
 
 ---
 
