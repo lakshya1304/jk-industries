@@ -143,31 +143,65 @@ html.dark {
   --color-ink-mute: #8ea1bb;
 }
 
-.dark .text-navy-900 {
-  color: #eaf0fb;
+/*
+ * Navy is the text colour used across the whole light UI, so in dark mode every
+ * step of the scale has to invert to a light tint.
+ *
+ * Both the solid utilities AND their `/NN` opacity variants must be handled.
+ * Tailwind bakes `text-navy-900/70` into its own rule with a *literal* colour,
+ * so overriding `.text-navy-900` alone leaves translucent navy text dark-on-dark
+ * — that was the "invisible navbar links" bug once the header scrolled onto its
+ * dark glass panel. The `color-mix` rules below re-tint the translucent forms
+ * while preserving their opacity hierarchy.
+ */
+:where(.dark) :is(.text-navy-900, .text-navy-800, .text-navy-700, .text-navy-600, .text-navy-500) {
+  color: var(--color-ink);
 }
 
-.dark .text-navy-800 {
-  color: #d6e1f1;
-}
+:where(.dark) :is(.text-navy-800, .text-navy-700) { color: #d6e1f1; }
+:where(.dark) :is(.text-navy-600, .text-navy-500) { color: #aebfd8; }
 
-.dark .text-navy-700 {
-  color: #c3d1e6;
-}
+/* Translucent navy text: keep the light tint but scale its alpha as authored. */
+:where(.dark) :is(.text-navy-900\/5, .text-navy-800\/5, .text-navy-700\/5, .text-navy-600\/5, .text-navy-500\/5) { color: rgb(234 240 251 / 0.05); }
+:where(.dark) :is(.text-navy-900\/10, .text-navy-800\/10, .text-navy-700\/10, .text-navy-600\/10, .text-navy-500\/10) { color: rgb(234 240 251 / 0.1); }
+:where(.dark) :is(.text-navy-900\/30, .text-navy-800\/30, .text-navy-700\/30, .text-navy-600\/30, .text-navy-500\/30) { color: rgb(234 240 251 / 0.3); }
+:where(.dark) :is(.text-navy-900\/40, .text-navy-800\/40, .text-navy-700\/40, .text-navy-600\/40, .text-navy-500\/40) { color: rgb(234 240 251 / 0.45); }
+:where(.dark) :is(.text-navy-900\/50, .text-navy-800\/50, .text-navy-700\/50, .text-navy-600\/50, .text-navy-500\/50) { color: rgb(234 240 251 / 0.55); }
+:where(.dark) :is(.text-navy-900\/60, .text-navy-800\/60, .text-navy-700\/60, .text-navy-600\/60, .text-navy-500\/60) { color: rgb(234 240 251 / 0.65); }
+:where(.dark) :is(.text-navy-900\/70, .text-navy-800\/70, .text-navy-700\/70, .text-navy-600\/70, .text-navy-500\/70) { color: rgb(234 240 251 / 0.75); }
+:where(.dark) :is(.text-navy-900\/80, .text-navy-800\/80, .text-navy-700\/80, .text-navy-600\/80, .text-navy-500\/80) { color: rgb(234 240 251 / 0.85); }
+:where(.dark) :is(.text-navy-900\/90, .text-navy-800\/90, .text-navy-700\/90, .text-navy-600\/90, .text-navy-500\/90) { color: rgb(234 240 251 / 0.93); }
 
-.dark .text-navy-600 {
-  color: #aebfd8;
-}
-
-.dark .text-navy-500 {
-  color: #9db0cd;
-}
-
-/* `text-white` must stay white — it is used on dark navy/green surfaces that do
-   not change between themes, even though `bg-white` becomes a dark card. */
-.dark .text-white {
+/*
+ * White text on dark surfaces.
+ *
+ * `text-white` and its translucent variants are only ever used on surfaces that
+ * stay dark in BOTH themes — the navy navbar, hero, CTA banner, footer and the
+ * green WhatsApp/primary buttons. Redefining `--color-white` to a dark card
+ * colour (needed so `bg-white` becomes a dark panel) would otherwise turn all of
+ * this copy dark-on-dark, which is exactly the "invisible header and footer"
+ * bug. So every variant is pinned back to real white, including the `/NN`
+ * opacity forms, which are baked into their own utilities and are NOT covered by
+ * an override of `.text-white` alone.
+ */
+:where(.dark) :is(.text-white, .text-white\/40, .text-white\/50, .text-white\/60,
+    .text-white\/65, .text-white\/70, .text-white\/75, .text-white\/80,
+    .text-white\/85, .text-white\/90, .text-white\/95) {
   color: #ffffff;
 }
+
+/* The translucent variants keep white but at reduced opacity, so hierarchy is
+   preserved instead of everything flattening to full-strength white. */
+:where(.dark) .text-white\/40 { color: rgb(255 255 255 / 0.55); }
+:where(.dark) .text-white\/50 { color: rgb(255 255 255 / 0.62); }
+:where(.dark) .text-white\/60 { color: rgb(255 255 255 / 0.7); }
+:where(.dark) .text-white\/65 { color: rgb(255 255 255 / 0.74); }
+:where(.dark) .text-white\/70 { color: rgb(255 255 255 / 0.78); }
+:where(.dark) .text-white\/75 { color: rgb(255 255 255 / 0.82); }
+:where(.dark) .text-white\/80 { color: rgb(255 255 255 / 0.86); }
+:where(.dark) .text-white\/85 { color: rgb(255 255 255 / 0.9); }
+:where(.dark) .text-white\/90 { color: rgb(255 255 255 / 0.94); }
+:where(.dark) .text-white\/95 { color: rgb(255 255 255 / 0.97); }
 
 /* Text that must invert to dark, because it sits on a light surface that stays
    light in dark mode (e.g. the white knob of a switch, fresh-green buttons). */
@@ -175,6 +209,30 @@ html.dark {
 .dark .bg-fresh-500,
 .dark .bg-fresh-700 {
   color: #04140a;
+}
+
+/*
+ * Navbar links.
+ *
+ * Tailwind compiles `text-navy-900/70` straight into a `color-mix(...)` literal
+ * rather than a `var()` reference, so no override keyed on the utility class can
+ * reach it. The markup therefore also carries a stable `nav-link` marker class
+ * and the colour is corrected from CSS. Without this the links stayed dark navy
+ * on the dark glass header once the page scrolled past the hero.
+ *
+ * Two classes are enough to outrank a single Tailwind utility, and the `:where`
+ * wrappers keep the theme condition contribution at zero specificity.
+ */
+.dark .nav-link.nav-link {
+  color: rgb(234 240 251 / 0.75);
+}
+
+.dark .nav-link.nav-link:hover {
+  color: #eaf0fb;
+}
+
+.dark .nav-link.nav-link.is-active {
+  color: #eaf0fb;
 }
 
 .dark .placeholder\:text-slate-400::placeholder {

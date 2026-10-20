@@ -1,6 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 
 export const ADMIN_SESSION_COOKIE = "sc_admin_session";
@@ -27,6 +28,11 @@ export async function createSessionToken(session: AdminSession): Promise<string>
 
 /** Verify a session token; returns null when invalid or expired. */
 export async function verifySessionToken(token: string): Promise<AdminSession | null> {
+  // `jwtVerify` checks the token's `exp` claim, which reads the current clock
+  // and therefore cannot run during a prerender pass. Marking this as
+  // request-time (the token is per-request anyway) keeps the prerenderer from
+  // reaching `new Date()` and failing the build.
+  await connection();
   try {
     const { payload } = await jwtVerify(token, getSecret());
     if (typeof payload.email !== "string" || typeof payload.name !== "string") return null;

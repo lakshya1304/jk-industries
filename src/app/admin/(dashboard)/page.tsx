@@ -12,25 +12,29 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 export const instant = false;
 
 export default async function AdminOverviewPage() {
-  const [
-    totalProducts,
-    activeProducts,
-    totalOrders,
-    pendingOrders,
-    totalEnquiries,
-    newEnquiries,
-    recentOrders,
-    recentEnquiries,
-  ] = await Promise.all([
-    prisma.product.count(),
-    prisma.product.count({ where: { active: true } }),
-    prisma.order.count(),
-    prisma.order.count({ where: { status: "pending" } }),
-    prisma.enquiry.count(),
-    prisma.enquiry.count({ where: { status: "new" } }),
-    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
-    prisma.enquiry.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
-  ]);
+  // Three grouped reads instead of eight parallel queries: every query in this
+  // page grabs its own connection from a 13-slot pool, and the old shape could
+  // exhaust it (P2024) when the dashboard, /api/admin/alerts and other admin
+  // pages were opened together. groupBy returns the totals and the per-status
+  // breakdowns in a single round trip each.
+  const [productCounts, orderCounts, enquiryCounts, recentOrders, recentEnquiries] =
+    await Promise.all([
+      prisma.product.groupBy({ by: ["active"], _count: { _all: true } }),
+      prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.enquiry.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
+      prisma.enquiry.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
+    ]);
+
+  const sum = (rows: { _count: { _all: number } }[]) =>
+    rows.reduce((total, row) => total + row._count._all, 0);
+
+  const totalProducts = sum(productCounts);
+  const activeProducts = sum(productCounts.filter((r) => r.active === true));
+  const totalOrders = sum(orderCounts);
+  const pendingOrders = sum(orderCounts.filter((r) => r.status === "pending"));
+  const totalEnquiries = sum(enquiryCounts);
+  const newEnquiries = sum(enquiryCounts.filter((r) => r.status === "new"));
 
   const stats = [
     {

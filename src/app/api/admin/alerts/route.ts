@@ -13,28 +13,37 @@ export async function GET() {
   const session = await getAdminApiSession();
   if (!session) return unauthorizedResponse();
 
-  const [pendingOrders, newEnquiries, lowStockRow] = await Promise.all([
+  // Every query takes a connection from a small pool, and this route is polled
+  // by the dashboard shell while other admin pages load, so it is kept to four
+  // cheap reads. The old version pulled *every* active pack in order to count
+  // the low-stock ones; a count plus a top-5 slice does the same job for far
+  // less work and avoids exhausting the pool (P2024).
+  const lowStockWhere = {
+    stock: { not: null, lte: LOW_STOCK_THRESHOLD },
+    active: true,
+  } as const;
+
+  const [pendingOrders, newEnquiries, lowStockTotal, lowStock] = await Promise.all([
     prisma.order.count({ where: { status: "pending" } }),
     prisma.enquiry.count({ where: { status: "new" } }),
+    prisma.packSize.count({ where: lowStockWhere }),
     prisma.packSize.findMany({
-      where: { stock: { not: null }, active: true },
+      where: lowStockWhere,
+      orderBy: { stock: "asc" },
+      take: 5,
       select: { id: true, label: true, stock: true, product: { select: { name: true } } },
     }),
   ]);
-
-  const lowStock = lowStockRow
-    .filter((p) => (p.stock ?? 0) <= LOW_STOCK_THRESHOLD)
-    .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
 
   return Response.json({
     ok: true,
     counts: {
       pendingOrders,
       newEnquiries,
-      lowStock: lowStock.length,
-      total: pendingOrders + newEnquiries + lowStock.length,
+      lowStock: lowStockTotal,
+      total: pendingOrders + newEnquiries + lowStockTotal,
     },
-    lowStock: lowStock.slice(0, 5).map((p) => ({
+    lowStock: lowStock.map((p) => ({
       id: p.id,
       productName: p.product.name,
       label: p.label,

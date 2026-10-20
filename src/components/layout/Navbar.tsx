@@ -92,7 +92,8 @@ export function Navbar({
                 <Link
                   href={link.href}
                   className={cn(
-                    "group relative rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200",
+                    "nav-link group relative rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200",
+                    active && "is-active",
                     overHero
                       ? "text-white/85 hover:text-white"
                       : "text-navy-900/70 hover:text-navy-900",
