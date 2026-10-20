@@ -246,6 +246,49 @@ html.dark {
 :where(.dark) .text-white\/90 { color: rgb(255 255 255 / 0.94); }
 :where(.dark) .text-white\/95 { color: rgb(255 255 255 / 0.97); }
 
+/*
+ * Hover variants of `text-white`.
+ *
+ * `hover:text-white` compiles to `.hover\:text-white:hover { color: var(--color-white) }`
+ * — it reads the token rather than inlining a literal, so the `.dark` remap of
+ * `--color-white` to the dark card colour (#101c31) reaches it. On the footer,
+ * navbar and admin sidebar, which stay dark in every theme, hovering a link
+ * therefore turned the text dark-on-dark and it vanished until the pointer
+ * moved away.
+ *
+ * The `.text-white` rules above cannot help here: this is a different utility
+ * class. Pinning the token back for the hover case fixes every current and
+ * future `hover:text-white` at once, instead of patching call sites one by one.
+ */
+:where(.dark) .hover\:text-white:hover {
+  color: #ffffff;
+}
+
+/* Same reasoning for the translucent hover forms, so hierarchy is preserved. */
+:where(.dark) .hover\:text-white\/60:hover { color: rgb(255 255 255 / 0.7); }
+:where(.dark) .hover\:text-white\/70:hover { color: rgb(255 255 255 / 0.78); }
+:where(.dark) .hover\:text-white\/75:hover { color: rgb(255 255 255 / 0.82); }
+:where(.dark) .hover\:text-white\/80:hover { color: rgb(255 255 255 / 0.86); }
+:where(.dark) .hover\:text-white\/90:hover { color: rgb(255 255 255 / 0.94); }
+
+/*
+ * `hover:bg-white/5` has the same weakness. Tailwind emits a hex fallback that
+ * is correct, plus a `color-mix(... var(--color-white) ...)` inside
+ * `@supports`; browsers that support color-mix (all current ones) take the
+ * second, which mixes with the remapped dark token and paints a faint dark
+ * rectangle instead of a light wash. The hex fallback is restated at full
+ * strength so the light wash always wins.
+ */
+@media (hover: hover) {
+  :where(.dark) .hover\:bg-white\/5:hover {
+    background-color: rgb(255 255 255 / 0.05);
+  }
+
+  :where(.dark) .hover\:bg-white\/10:hover {
+    background-color: rgb(255 255 255 / 0.1);
+  }
+}
+
 /* Text that must invert to dark, because it sits on a light surface that stays
    light in dark mode (e.g. the white knob of a switch, fresh-green buttons). */
 .dark .bg-fresh-600,
