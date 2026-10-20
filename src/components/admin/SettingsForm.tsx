@@ -26,6 +26,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
     city: settings.city,
     state: settings.state,
     pincode: settings.pincode,
+    mapUrl: settings.mapUrl,
     gstin: settings.gstin,
     heroTitle: settings.heroTitle,
     heroSubtitle: settings.heroSubtitle,
@@ -168,6 +169,21 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           </Field>
           <Field label="PIN code" htmlFor="pincode" error={errors.pincode}>
             <Input id="pincode" inputMode="numeric" value={form.pincode} onChange={set("pincode")} invalid={Boolean(errors.pincode)} />
+          </Field>
+          <Field
+            label="Map link"
+            htmlFor="mapUrl"
+            error={errors.mapUrl}
+            className="sm:col-span-2"
+            hint="Optional. Paste a Google Maps share link to pin your exact location. Leave blank to search the address above."
+          >
+            <Input
+              id="mapUrl"
+              value={form.mapUrl}
+              onChange={set("mapUrl")}
+              invalid={Boolean(errors.mapUrl)}
+              placeholder="https://maps.app.goo.gl/..."
+            />
           </Field>
           <Field label="GSTIN" htmlFor="gstin" error={errors.gstin} hint="Shown on bills when filled.">
             <Input id="gstin" value={form.gstin} onChange={set("gstin")} invalid={Boolean(errors.gstin)} />

@@ -30,6 +30,7 @@ export async function PUT(request: Request) {
     city: d.city,
     state: d.state,
     pincode: d.pincode,
+    mapUrl: d.mapUrl,
     gstin: d.gstin,
     showMRP: String(d.showMRP),
     showWholesalePrice: String(d.showWholesalePrice),

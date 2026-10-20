@@ -175,6 +175,14 @@ export const adminSettingsSchema = z.object({
   city: z.string().trim().max(80),
   state: z.string().trim().max(80),
   pincode: z.string().trim().max(10),
+  mapUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (v) => v === "" || /^https?:\/\//i.test(v),
+      "Enter a full link starting with http:// or https://",
+    ),
   gstin: z.string().trim().max(20),
   showMRP: z.boolean(),
   showWholesalePrice: z.boolean(),

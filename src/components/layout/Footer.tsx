@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { cacheLife } from "next/cache";
+import { MapPin } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { waLink } from "@/lib/whatsapp";
+import { mapsHref } from "@/lib/utils";
 import type { SiteSettings } from "@/lib/types";
 
 const NAV_LINKS = [
@@ -17,6 +19,9 @@ const LEGAL_LINKS = [
   { href: "/terms", label: "Terms & Conditions" },
   { href: "/shipping-returns", label: "Shipping & Returns" },
 ];
+
+/** Staff entry point. `/admin` redirects to the login page. */
+const ADMIN_LINK = { href: "/admin/login", label: "Admin Login" };
 
 /**
  * Current year, cached so the footer can be part of the static shell without
@@ -34,6 +39,7 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
     settings.whatsappNumber,
     `Hello ${settings.brandName}, I would like more information about your products.`
   );
+  const mapsUrl = mapsHref(settings);
 
   return (
     <footer className="bg-navy-950 text-white">
@@ -78,17 +84,54 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href={ADMIN_LINK.href}
+                className="text-sm text-white/60 underline-offset-4 transition-colors hover:text-white hover:underline"
+              >
+                {ADMIN_LINK.label}
+              </Link>
+            </li>
           </ul>
         </nav>
 
         <div>
           <h2 className="text-sm font-bold tracking-wide text-white/90 uppercase">Contact</h2>
           <address className="mt-4 space-y-2.5 text-sm not-italic text-white/60">
-            <p>
-              {settings.addressLine}
-              <br />
-              {settings.city}, {settings.state} {settings.pincode}
-            </p>
+            {/*
+              The address opens Google Maps. It is an external link, so it gets
+              target/rel and a visible cue that it leaves the site. When no
+              usable address or map link is configured, plain text is rendered
+              instead so visitors never land on an empty map search.
+            */}
+            {mapsUrl ? (
+              <p>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-start gap-1.5 transition-colors hover:text-white"
+                  title="Open in Google Maps"
+                >
+                  <MapPin
+                    className="mt-0.5 size-4 shrink-0 text-white/40 transition-colors group-hover:text-fresh-400"
+                    aria-hidden
+                  />
+                  <span className="underline-offset-4 group-hover:underline">
+                    {settings.addressLine}
+                    <br />
+                    {settings.city}, {settings.state} {settings.pincode}
+                    <span className="sr-only"> — opens in Google Maps</span>
+                  </span>
+                </a>
+              </p>
+            ) : (
+              <p>
+                {settings.addressLine}
+                <br />
+                {settings.city}, {settings.state} {settings.pincode}
+              </p>
+            )}
             {settings.contactPhone ? (
               <p>
                 <a
@@ -158,23 +201,7 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
             © {year} {settings.brandName} — a brand of {settings.manufacturerName}. All rights
             reserved.
           </p>
-          {/*
-            Staff-only entry point. Sits in the utility bar rather than "Quick
-            links" so the customer-facing list stays purely shopper-oriented.
-            `/admin` redirects to the login page, so this exposes nothing.
-          */}
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <Link
-              href="/admin"
-              className="font-semibold underline-offset-4 transition-colors hover:text-white hover:underline"
-            >
-              Admin
-            </Link>
-            <span aria-hidden className="text-white/20">
-              •
-            </span>
-            <p>Prices and availability are confirmed at the time of order confirmation.</p>
-          </div>
+          <p>Prices and availability are confirmed at the time of order confirmation.</p>
         </div>
       </div>
     </footer>

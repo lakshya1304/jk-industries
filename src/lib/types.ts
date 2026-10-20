@@ -38,6 +38,12 @@ export type SiteSettings = {
   city: string;
   state: string;
   pincode: string;
+  /**
+   * Optional "find us" link for the footer address. When set, the footer uses
+   * it verbatim so staff can pin an exact point (e.g. a Google Maps share
+   * link); when empty, a maps search is built from the address fields above.
+   */
+  mapUrl: string;
   gstin: string;
   showMRP: boolean;
   showWholesalePrice: boolean;

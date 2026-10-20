@@ -60,3 +60,45 @@ export function clientIp(headersList: Headers): string {
   if (fwd) return fwd.split(",")[0].trim();
   return headersList.get("x-real-ip") ?? "unknown";
 }
+
+/**
+ * Build the "open in maps" link shown behind the footer address.
+ *
+ * When an explicit `mapUrl` is configured it is used as-is, so staff can pin an
+ * exact point with a share link that a plain address search would not find.
+ * Otherwise a Google Maps search is assembled from the structured address
+ * fields.
+ *
+ * Returns `null` when there is nothing meaningful to search for, so the footer
+ * can render plain text instead of a link that opens an empty search. The
+ * seeded placeholder values ("Your City", "000000") are treated as missing
+ * rather than searched for, since they would send visitors to a wrong place.
+ */
+export function mapsHref({
+  mapUrl,
+  addressLine,
+  city,
+  state,
+  pincode,
+}: {
+  mapUrl?: string;
+  addressLine?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}): string | null {
+  const explicit = mapUrl?.trim();
+  if (explicit) return /^https?:\/\//i.test(explicit) ? explicit : `https://${explicit}`;
+
+  const isPlaceholder = (v: string | undefined) =>
+    !v || /your\s+city|your\s+state|^0+$|^industrial area$/i.test(v.trim());
+
+  const parts = [addressLine, city, state, pincode]
+    .map((p) => p?.trim() ?? "")
+    .filter((p) => p.length > 0 && !isPlaceholder(p));
+
+  // A bare pincode or city alone is not a useful pin.
+  if (parts.length < 2) return null;
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(", "))}`;
+}
