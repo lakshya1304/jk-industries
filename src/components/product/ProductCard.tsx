@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Boxes, MessageCircle, Plus } from "lucide-react";
 import { AvailabilityBadge } from "@/components/ui/Badge";
@@ -26,6 +27,7 @@ export function ProductCard({
   product: ProductDTO;
   options: ProductCardOptions;
 }) {
+  const router = useRouter();
   const { addItem } = useCart();
   const [packIndex, setPackIndex] = useState(0);
   const packs = product.packSizes.length > 0 ? product.packSizes : [];
@@ -56,25 +58,54 @@ export function ProductCard({
         productEnquiryMessage({ brandName: options.brandName, product }),
       );
 
+  /**
+   * Open the product page when any non-interactive part of the card is
+   * clicked.
+   *
+   * Controls inside the card (pack chips, Add to Cart, carton, the WhatsApp
+   * link) must keep their own behaviour, so a click that originated on one of
+   * them is ignored here. `closest` walks up from the real event target, which
+   * also covers clicks on icons or text *inside* a button.
+   */
+  function handleCardClick(e: React.MouseEvent<HTMLElement>) {
+    // Let modified clicks behave normally (open in new tab, etc.).
+    if (e.defaultPrevented || e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, a, input, select, textarea, label")) return;
+
+    router.push(`/products/${product.slug}`);
+  }
+
   return (
     <Tilt className="h-full">
-      <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-navy-900/6 bg-white shadow-[0_1px_2px_rgba(11,31,58,0.04)] transition-[box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:border-navy-900/12 hover:shadow-[0_28px_56px_-26px_rgba(11,31,58,0.34)]">
-        {/*
-          Whole-card link. It is stretched over the card so a click anywhere —
-          image, title, empty space — opens the product. Interactive controls
-          (pack chips, Add to Cart, carton, WhatsApp) sit at `z-20`, above this
-          overlay, otherwise it would swallow their clicks.
+      {/*
+        The whole card opens the product page, not just the image or the title.
 
-          The image and content blocks deliberately do NOT use `translateZ`.
-          Inside the tilt wrapper's `preserve-3d` context a transformed sibling
-          is hit-tested ahead of a plain `z-10` layer, which left the image dead
-          to clicks and the overlay unreachable. The tilt itself comes from the
-          wrapper's rotation, so nothing visual is lost.
-        */}
+        Two mechanisms work together:
+        - `onClick` on the article handles a click anywhere on the card. It
+          ignores clicks that landed on a real control (pack chips, Add to
+          Cart, WhatsApp, carton) by checking whether the event target is
+          inside an interactive element, so those keep doing their own job.
+        - A stretched <Link> covers the card for keyboard focus, screen
+          readers and middle-click/open-in-new-tab. It is decorative to the
+          pointer (`pointer-events-none`) because the article's onClick
+          already handles mouse clicks — otherwise the two would fight over
+          the same click and could double-navigate.
+
+        Clicks on the image, the title, the price text, the padding and the
+        gaps between controls all land on the article, so every part of the
+        card is clickable.
+      */}
+      <article
+        onClick={handleCardClick}
+        className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-navy-900/6 bg-white shadow-[0_1px_2px_rgba(11,31,58,0.04)] transition-[box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:border-navy-900/12 hover:shadow-[0_28px_56px_-26px_rgba(11,31,58,0.34)]"
+      >
         <Link
           href={`/products/${product.slug}`}
-          className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fresh-600"
           aria-label={`View ${product.name} details`}
+          className="pointer-events-none absolute inset-0 z-0 rounded-2xl focus-visible:pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fresh-600"
         />
 
         <div className="relative block aspect-4/5 overflow-hidden bg-navy-50 [transform-style:preserve-3d]">
@@ -118,11 +149,7 @@ export function ProductCard({
           </div>
 
           {packs.length > 0 && (
-            <div
-              className="relative z-20 flex flex-wrap gap-1.5"
-              role="group"
-              aria-label={`Pack sizes for ${product.name}`}
-            >
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Pack sizes for ${product.name}`}>
               {packs.map((pack, i) => (
                 <button
                   key={pack.id}
@@ -186,7 +213,7 @@ export function ProductCard({
               onClick={() =>
                 selected && addItem(product, selected, product.minOrderQty)
               }
-              className="relative z-20 inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
             >
               <Plus className="size-4" aria-hidden />
               {out ? "Unavailable" : "Add to Cart"}
@@ -196,7 +223,7 @@ export function ProductCard({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Enquire on WhatsApp about ${product.name}`}
-              className="relative z-20 grid size-10 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
+              className="grid size-10 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
             >
               <MessageCircle className="size-4.5" aria-hidden />
             </a>
@@ -212,7 +239,7 @@ export function ProductCard({
                   unitWholesale: cartonRate!,
                 })
               }
-              className="relative z-20 inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-fresh-600/40 bg-fresh-50 px-3 text-xs font-bold text-fresh-800 transition-[background-color,border-color,transform] duration-200 hover:border-fresh-600/70 hover:bg-fresh-100 active:scale-[0.97]"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-fresh-600/40 bg-fresh-50 px-3 text-xs font-bold text-fresh-800 transition-[background-color,border-color,transform] duration-200 hover:border-fresh-600/70 hover:bg-fresh-100 active:scale-[0.97]"
             >
               <Boxes className="size-3.5" aria-hidden />
               Add carton ({cartonUnits} × {selected?.label}) · {formatINR(cartonPrice)}
