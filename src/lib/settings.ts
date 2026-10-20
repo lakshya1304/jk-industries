@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getPrisma, prisma } from "@/lib/prisma";
 import type { SiteSettings, WhyChooseItem } from "@/lib/types";
 
 export const SETTINGS_TAG = "settings";
@@ -82,7 +82,10 @@ export async function getSettings(): Promise<SiteSettings> {
   cacheLife("minutes");
   cacheTag(SETTINGS_TAG);
 
-  const rows = await prisma.setting.findMany();
+  // Resolved at call time rather than from the imported binding: a cached
+  // module can survive a hot reload holding a reference to a superseded client,
+  // which Next.js rejects as "a promise created outside" the cache boundary.
+  const rows = await getPrisma().setting.findMany();
   const map = new Map(rows.map((r) => [r.key, r.value]));
 
   return {

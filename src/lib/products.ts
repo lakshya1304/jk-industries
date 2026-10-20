@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag, revalidatePath, revalidateTag } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { parseImages } from "@/lib/utils";
 import type { PackSizeDTO, ProductDTO } from "@/lib/types";
@@ -57,7 +57,7 @@ export async function getActiveProducts(): Promise<ProductDTO[]> {
   cacheLife("minutes");
   cacheTag(PRODUCTS_TAG);
 
-  const rows = await prisma.product.findMany({
+  const rows = await getPrisma().product.findMany({
     where: { active: true },
     include: { packSizes: packOrder },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -78,7 +78,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDTO | null>
   cacheLife("minutes");
   cacheTag(PRODUCTS_TAG);
 
-  const row = await prisma.product.findFirst({
+  const row = await getPrisma().product.findFirst({
     where: { slug, active: true },
     include: { packSizes: packOrder },
   });
