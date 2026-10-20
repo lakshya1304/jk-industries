@@ -108,7 +108,7 @@ export function ProductCard({
           className="pointer-events-none absolute inset-0 z-0 rounded-2xl focus-visible:pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fresh-600"
         />
 
-        <div className="relative block aspect-4/5 overflow-hidden bg-navy-50 [transform-style:preserve-3d]">
+        <div className="relative block aspect-square overflow-hidden bg-navy-50 [transform-style:preserve-3d]">
           {image ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -135,12 +135,12 @@ export function ProductCard({
           )}
         </div>
 
-        <div className="relative flex flex-1 flex-col gap-3 p-5 [transform-style:preserve-3d]">
+        <div className="relative flex flex-1 flex-col gap-2.5 p-3.5 [transform-style:preserve-3d]">
           <div>
-            <h3 className="text-base leading-snug font-bold text-navy-900">
+            <h3 className="line-clamp-2 text-sm leading-snug font-bold text-navy-900">
               {product.name}
             </h3>
-            <p className="mt-1 text-xs font-semibold tracking-wide text-ink-mute uppercase">
+            <p className="mt-0.5 text-[11px] font-semibold tracking-wide text-ink-mute uppercase">
               SKU {product.sku}
               {product.unitsPerCarton
                 ? ` · ${product.unitsPerCarton} pcs/carton`
@@ -149,7 +149,7 @@ export function ProductCard({
           </div>
 
           {packs.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Pack sizes for ${product.name}`}>
+            <div className="flex flex-wrap gap-1" role="group" aria-label={`Pack sizes for ${product.name}`}>
               {packs.map((pack, i) => (
                 <button
                   key={pack.id}
@@ -157,7 +157,7 @@ export function ProductCard({
                   onClick={() => setPackIndex(i)}
                   aria-pressed={i === packIndex}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors duration-200",
+                    "rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors duration-200",
                     i === packIndex
                       ? "border-navy-900 bg-navy-900 text-white"
                       : "border-navy-900/15 bg-white text-ink-soft hover:border-navy-900/35 hover:text-navy-900",
@@ -173,49 +173,49 @@ export function ProductCard({
             {product.showPrice && selected ? (
               <>
                 {options.showMRP && (
-                  <p className="text-lg font-extrabold text-navy-900">
+                  <p className="text-base font-extrabold text-navy-900">
                     {formatINR(selected.mrp)}
-                    <span className="ml-1 text-xs font-semibold text-ink-mute">
+                    <span className="ml-1 text-[11px] font-semibold text-ink-mute">
                       MRP / {selected.label}
                     </span>
                   </p>
                 )}
                 {options.showWholesale && selected.wholesalePrice != null && (
-                  <p className="text-sm font-bold text-fresh-700">
-                    Wholesale: {formatINR(selected.wholesalePrice)}
-                    <span className="ml-1 text-xs font-medium text-ink-mute">
-                      per {selected.label}
+                  <p className="text-xs font-bold text-fresh-700">
+                    Wholesale {formatINR(selected.wholesalePrice)}
+                    <span className="ml-1 font-medium text-ink-mute">
+                      / {selected.label}
                     </span>
                   </p>
                 )}
                 {cartonAvailable && (
-                  <p className="text-xs font-semibold text-ink-mute">
+                  <p className="text-[11px] font-semibold text-ink-mute">
                     {formatINR(cartonPrice)} per carton of {cartonUnits}
                   </p>
                 )}
                 {!options.showMRP && (
-                  <p className="text-sm font-semibold text-ink-soft">
+                  <p className="text-xs font-semibold text-ink-soft">
                     Price on enquiry
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-sm font-semibold text-ink-soft">
+              <p className="text-xs font-semibold text-ink-soft">
                 Price on enquiry
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-[1fr_auto] gap-2 pt-1">
+          <div className="grid grid-cols-[1fr_auto] gap-1.5 pt-0.5">
             <button
               type="button"
               disabled={!selected || out}
               onClick={() =>
                 selected && addItem(product, selected, product.minOrderQty)
               }
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-3 text-xs font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
             >
-              <Plus className="size-4" aria-hidden />
+              <Plus className="size-3.5" aria-hidden />
               {out ? "Unavailable" : "Add to Cart"}
             </button>
             <a
@@ -223,9 +223,9 @@ export function ProductCard({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Enquire on WhatsApp about ${product.name}`}
-              className="grid size-10 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
+              className="grid size-9 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
             >
-              <MessageCircle className="size-4.5" aria-hidden />
+              <MessageCircle className="size-4" aria-hidden />
             </a>
           </div>
 
@@ -239,9 +239,9 @@ export function ProductCard({
                   unitWholesale: cartonRate!,
                 })
               }
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-fresh-600/40 bg-fresh-50 px-3 text-xs font-bold text-fresh-800 transition-[background-color,border-color,transform] duration-200 hover:border-fresh-600/70 hover:bg-fresh-100 active:scale-[0.97]"
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-fresh-600/40 bg-fresh-50 px-2.5 text-[11px] font-bold text-fresh-800 transition-[background-color,border-color,transform] duration-200 hover:border-fresh-600/70 hover:bg-fresh-100 active:scale-[0.97]"
             >
-              <Boxes className="size-3.5" aria-hidden />
+              <Boxes className="size-3" aria-hidden />
               Add carton ({cartonUnits} × {selected?.label}) · {formatINR(cartonPrice)}
             </button>
           )}

@@ -32,13 +32,37 @@ const sizes: Record<Size, string> = {
   lg: "h-13 px-7 text-base",
 };
 
-export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+/**
+ * Props accepted by {@link Button}.
+ *
+ * Anchored at the anchor element rather than the button element so the same
+ * attributes can be forwarded to `<a>`, `<Link>` and `<button>` without a cast.
+ * The only button-only attributes anyone would pass here (`type`, `disabled`)
+ * are re-declared where they are actually meaningful. Spreading a
+ * `ButtonHTMLAttributes` object onto an `<a>` is what produced the type error
+ * that blocked `onClick` from being forwarded in the first place.
+ */
+export type ButtonProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   variant?: Variant;
   size?: Size;
   href?: string;
   external?: boolean;
+  /** Only meaningful for the `<button>` branch. */
+  type?: "button" | "submit" | "reset";
+  /** Only meaningful for the `<button>` branch. */
+  disabled?: boolean;
 };
 
+/**
+ * Shared button. Renders an `<a>`, a Next `<Link>` or a `<button>` depending on
+ * whether `href` is supplied.
+ *
+ * `onClick` is forwarded to the link branches as well as the button branch.
+ * Leaving it off was a real bug: the cart drawer's "Proceed to Order Request"
+ * passes both `href="/cart"` and `onClick={closeDrawer}`, so the navigation ran
+ * but the drawer never closed and stayed open over the cart page. Callers should
+ * be able to attach a side effect to a navigational button.
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = "primary", size = "md", href, external, children, ...props },
   ref
@@ -47,19 +71,31 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   if (href) {
     if (external) {
       return (
-        <a href={href} className={cls} target="_blank" rel="noopener noreferrer">
+        <a href={href} className={cls} target="_blank" rel="noopener noreferrer" {...props}>
           {children}
         </a>
       );
     }
     return (
-      <Link href={href} className={cls}>
+      <Link href={href} className={cls} {...props}>
         {children}
       </Link>
     );
   }
   return (
-    <button ref={ref} className={cls} {...props}>
+    /*
+      The props carry anchor-typed handlers (see `ButtonProps`), which are
+      structurally incompatible with the button element's own handler types.
+      Narrowing to the button's attribute shape for the remaining props keeps
+      this branch honest at compile time; every attribute callers actually use
+      on a non-link Button (onClick, aria-*, data-*, title…) is present in both
+      element scopes, so nothing is lost at runtime.
+    */
+    <button
+      ref={ref}
+      className={cls}
+      {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+    >
       {children}
     </button>
   );

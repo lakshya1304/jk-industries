@@ -71,11 +71,16 @@ export function Navbar({
         aria-label="Main"
         className="container-page flex h-16 items-center justify-between gap-4 md:h-18"
       >
-        <Link
-          href="/"
-          className="rounded-lg"
-          aria-label={`${brandName} home`}
-        >
+        {/*
+          No `aria-label`. The lockup inside already reads "Super Cleaner by JK
+          Industries", which is a perfectly good link name, and overriding it
+          with a short label ("Super Cleaner home") made the visible text and
+          the accessible name disagree — axe reports that as
+          "label-content-name-mismatch", which is confusing for anyone driving
+          the page with voice control since the spoken text no longer matches
+          what they see.
+        */}
+        <Link href="/" className="rounded-lg">
           <BrandLogo
             brandName={brandName}
             manufacturerName={manufacturerName}
@@ -115,19 +120,22 @@ export function Navbar({
         </ul>
 
         <div className="flex items-center gap-1.5">
-          <ButtonLike
+          {/*
+            Compact icon-only WhatsApp button, sized to match the theme and cart
+            controls (size-10) so the header reads as three equal actions rather
+            than one oversized pill. The icon carries no text, so the accessible
+            name comes from `aria-label`. It leaves the site, hence target/rel.
+          */}
+          <a
             href={whatsappHref}
-            className={cn(
-              "hidden lg:inline-flex",
-              overHero
-                ? "border-white/25 bg-white/10 text-white hover:bg-white/20"
-                : ""
-            )}
-            variant={overHero ? "custom" : "outline"}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Enquire on WhatsApp (opens in a new tab)"
+            title="Enquire on WhatsApp"
+            className="grid size-10 place-items-center rounded-full bg-[#25D366] text-[#062b17] transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fresh-600 active:scale-95"
           >
-            <MessageCircle className="size-4" aria-hidden />
-            WhatsApp
-          </ButtonLike>
+            <MessageCircle className="size-5" aria-hidden />
+          </a>
 
           <ThemeToggle className={overHero ? "[&>button]:text-white [&>button:hover]:bg-white/10" : undefined} />
 
@@ -245,44 +253,3 @@ export function Navbar({
   );
 }
 
-/** Small wrapper so the ghost WhatsApp button can sit over the dark hero. */
-function ButtonLike({
-  href,
-  className,
-  variant,
-  children,
-}: {
-  href: string;
-  className?: string;
-  variant: "outline" | "custom";
-  children: React.ReactNode;
-}) {
-  if (variant === "custom") {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "inline-flex h-10 items-center gap-2 rounded-full border px-5 text-sm font-semibold transition-colors duration-200",
-          className
-        )}
-      >
-        {children}
-      </a>
-    );
-  }
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-full border border-navy-900/20 bg-white px-5 text-sm font-semibold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50",
-        className
-      )}
-    >
-      {children}
-    </a>
-  );
-}

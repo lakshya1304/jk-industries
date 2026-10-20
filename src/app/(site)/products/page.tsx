@@ -48,6 +48,14 @@ export default async function ProductsPage() {
         </header>
 
         <div className="container-page pb-16">
+          {/*
+            Visually hidden, so the page goes h1 → h2 → h3 instead of jumping
+            straight from the H1 to the product card H3s. Screen readers announce
+            the results region as its own section, which is what it is, and the
+            catalogue's own controls already carry the visible "N products"
+            count. Nothing appears differently on screen.
+          */}
+          <h2 className="sr-only">Product catalogue</h2>
           <ProductCatalogue
             products={products}
             options={{

@@ -8,7 +8,11 @@ import { Reveal } from "@/components/ui/Reveal";
 
 export async function FeaturedProducts() {
   const [products, settings] = await Promise.all([
-    getFeaturedProducts(8),
+    // Four, not eight. The homepage is an overview that points at the
+    // catalogue; the full range lives on /products. Showing the whole range
+    // here made the front page read as a second catalogue and diluted the
+    // "view all products" path.
+    getFeaturedProducts(4),
     getSettings(),
   ]);
 

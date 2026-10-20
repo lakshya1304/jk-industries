@@ -124,13 +124,16 @@ export function ProductCatalogue({
             )}
           </div>
 
+          {/* The two selects share the row on a phone and would overflow their
+              fixed widths, so they stretch instead: `flex-1` with a sensible
+              minimum, dropping back to fixed widths once there is room. */}
           <div className="flex items-center gap-2.5">
-            <SlidersHorizontal className="size-4 shrink-0 text-ink-mute" aria-hidden />
+            <SlidersHorizontal className="hidden size-4 shrink-0 text-ink-mute sm:block" aria-hidden />
             <Select
               aria-label="Sort products"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-12 w-44 rounded-full text-sm font-semibold"
+              className="h-11 min-w-0 flex-1 rounded-full text-sm font-semibold sm:h-12 sm:flex-none sm:w-44"
             >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -142,7 +145,7 @@ export function ProductCatalogue({
               aria-label="Filter by availability"
               value={availability}
               onChange={(e) => setAvailability(e.target.value)}
-              className="h-12 w-40 rounded-full text-sm font-semibold"
+              className="h-11 min-w-0 flex-1 rounded-full text-sm font-semibold sm:h-12 sm:flex-none sm:w-40"
             >
               <option value="all">All availability</option>
               {Object.entries(AVAILABILITY_LABELS).map(([value, label]) => (

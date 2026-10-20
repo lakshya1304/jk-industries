@@ -49,6 +49,12 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Enquiries, wholesale pricing and dealership details",
         url: "/contact",
       },
+      {
+        name: "FAQs",
+        short_name: "FAQs",
+        description: "Ordering, wholesale supply, payment and order tracking",
+        url: "/faq",
+      },
     ],
   };
 }

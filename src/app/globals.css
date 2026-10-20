@@ -227,16 +227,25 @@ html.dark {
  * opacity forms, which are baked into their own utilities and are NOT covered by
  * an override of `.text-white` alone.
  */
-:where(.dark) :is(.text-white, .text-white\/40, .text-white\/50, .text-white\/60,
-    .text-white\/65, .text-white\/70, .text-white\/75, .text-white\/80,
-    .text-white\/85, .text-white\/90, .text-white\/95) {
+:where(.dark) :is(.text-white, .text-white\/40, .text-white\/45, .text-white\/50,
+    .text-white\/55, .text-white\/60, .text-white\/65, .text-white\/70,
+    .text-white\/75, .text-white\/80, .text-white\/85, .text-white\/90,
+    .text-white\/95) {
   color: #ffffff;
 }
 
 /* The translucent variants keep white but at reduced opacity, so hierarchy is
-   preserved instead of everything flattening to full-strength white. */
+   preserved instead of everything flattening to full-strength white.
+
+   Every step used in the codebase must be listed. A missing one is not a mild
+   degradation: Tailwind compiles `text-white/45` to `color-mix(... var(--color-white) ...)`,
+   and in dark mode `--color-white` is the dark surface, so an unlisted step
+   renders dark-on-dark at ~1.05:1 contrast — invisible text, flagged by axe.
+   `/45` was added for exactly this reason after the footer used it. */
 :where(.dark) .text-white\/40 { color: rgb(255 255 255 / 0.55); }
+:where(.dark) .text-white\/45 { color: rgb(255 255 255 / 0.58); }
 :where(.dark) .text-white\/50 { color: rgb(255 255 255 / 0.62); }
+:where(.dark) .text-white\/55 { color: rgb(255 255 255 / 0.66); }
 :where(.dark) .text-white\/60 { color: rgb(255 255 255 / 0.7); }
 :where(.dark) .text-white\/65 { color: rgb(255 255 255 / 0.74); }
 :where(.dark) .text-white\/70 { color: rgb(255 255 255 / 0.78); }

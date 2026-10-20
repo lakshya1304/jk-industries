@@ -1,4 +1,5 @@
 import type { ProductDTO, SiteSettings } from "@/lib/types";
+import type { FaqItem } from "@/lib/faq";
 import { mapsHref } from "@/lib/utils";
 
 /**
@@ -360,3 +361,43 @@ export function aboutPageSchema(settings: SiteSettings) {
     about: { "@id": `${siteUrl()}/#organization` },
   };
 }
+
+/**
+ * FAQPage node for /faq.
+ *
+ * `items` must be the exact questions and answers rendered on that page —
+ * Google requires FAQ markup to match visible content, and this is the only
+ * URL on the site that emits FAQPage (a second copy on the homepage would
+ * compete with it and risk both being ignored).
+ */
+export function faqPageSchema(settings: SiteSettings, items: FaqItem[]) {
+  const url = absolute("/faq");
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "@id": `${url}#faq`,
+      url,
+      name: `Frequently asked questions — ${brandTitle(settings)}`,
+      description: `Answers to common questions about ordering, wholesale supply, payment and order tracking for ${settings.brandName} products.`,
+      isPartOf: { "@id": `${siteUrl()}/#website` },
+      about: { "@id": `${siteUrl()}/#organization` },
+      mainEntity: items.map((f) => ({
+        "@type": "Question",
+        name: f.question,
+        acceptedAnswer: { "@type": "Answer", text: f.answer },
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${url}#webpage`,
+      url,
+      name: `Frequently asked questions — ${brandTitle(settings)}`,
+      isPartOf: { "@id": `${siteUrl()}/#website` },
+      about: { "@id": `${siteUrl()}/#organization` },
+      inLanguage: "en-IN",
+    },
+  ];
+}
+

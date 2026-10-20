@@ -92,7 +92,16 @@ export function ThemeToggle({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-navy-900/10 bg-white p-1.5 shadow-[0_24px_50px_-24px_rgba(11,31,58,0.45)]"
+            /*
+              Surface tokens, not `bg-white`.
+
+              In dark mode `--color-white` is remapped to the navy card colour
+              (#101c31), so `bg-white` produced a dark panel while the menu items
+              kept `text-navy-900` — dark text on a dark background, which made
+              the theme menu unreadable. `bg-surface`/`text-ink` resolve per
+              theme, and the border uses the navy token that is also remapped.
+            */
+            className="absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-navy-900/10 bg-surface p-1.5 shadow-[0_24px_50px_-24px_rgba(11,31,58,0.45)]"
           >
             {OPTIONS.map((opt) => (
               <button

@@ -25,7 +25,11 @@ export function NavbarFallback({
   return (
     <header className="glass fixed inset-x-0 top-0 z-50 shadow-[0_1px_0_rgba(11,31,58,0.08)]">
       <nav aria-label="Main" className="container-page flex h-16 items-center justify-between gap-4 md:h-18">
-        <Link href="/" className="rounded-lg" aria-label={`${brandName} home`}>
+        {/* No `aria-label`: the lockup already reads "Super Cleaner by JK
+            Industries". Overriding it made the visible text and the accessible
+            name disagree (axe: label-content-name-mismatch). Keep this in step
+            with Navbar.tsx, which renders the same link. */}
+        <Link href="/" className="rounded-lg">
           <BrandLogo brandName={brandName} manufacturerName={manufacturerName} tone="dark" />
         </Link>
 

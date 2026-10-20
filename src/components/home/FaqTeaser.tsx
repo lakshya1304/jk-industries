@@ -1,28 +1,32 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { Reveal } from "@/components/ui/Reveal";
 import { homeFaqs } from "@/lib/faq";
 
 /**
- * Homepage FAQ.
+ * Homepage FAQ teaser.
  *
- * Renders the questions visibly and uses native `<details>` accordions, which
- * means the answers are present in the HTML (not revealed only by JavaScript)
- * and are readable by crawlers. FAQPage structured data is emitted separately
- * from the same `homeFaqs()` source, so markup and page always agree.
+ * Shows the first three questions — enough to answer the most common doubts and
+ * to signal the section exists — and links to /faq for the rest. The full list
+ * lives on /faq, which is also the only page carrying FAQPage structured data.
+ *
+ * Answers are rendered in the HTML inside native `<details>` elements, so they
+ * are readable by crawlers rather than only revealed by JavaScript.
  */
-export async function FaqSection() {
+export async function FaqTeaser() {
   const settings = await getSettings();
-  const faqs = homeFaqs(settings);
+  const faqs = homeFaqs(settings).slice(0, 3);
 
   return (
-    <section className="section bg-white" aria-labelledby="faq-heading">
+    <section className="section bg-white" aria-labelledby="faq-teaser-heading">
       <div className="container-page">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-bold tracking-[0.18em] text-fresh-700 uppercase">
             Questions
           </p>
           <h2
-            id="faq-heading"
+            id="faq-teaser-heading"
             className="mt-2 text-3xl font-extrabold tracking-tight text-navy-900 md:text-4xl"
           >
             Frequently asked questions
@@ -50,6 +54,19 @@ export async function FaqSection() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal className="mt-8 text-center">
+          <Link
+            href="/faq"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-navy-900/15 bg-white px-5 py-2.5 text-sm font-bold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50"
+          >
+            Read all FAQs
+            <ArrowRight
+              className="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </Link>
+        </Reveal>
       </div>
     </section>
   );

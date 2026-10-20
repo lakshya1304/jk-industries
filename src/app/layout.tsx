@@ -123,6 +123,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <JsonLd data={[organizationSchema(settings), websiteSchema(settings)]} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
+        {/*
+          Skip link. Keyboard and screen-reader users land on this first; it is
+          visually hidden until focused, then pinned to the top-left. Every page
+          renders a `<main id="main-content">`, so the target always exists.
+        */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-full focus:bg-navy-900 focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white focus:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-fresh-600"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

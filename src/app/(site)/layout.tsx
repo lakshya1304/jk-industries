@@ -13,12 +13,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <CartProvider>
       <ScrollProgress />
-      <a
-        href="#main-content"
-        className="sr-only z-100 rounded-md bg-navy-900 px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4"
-      >
-        Skip to main content
-      </a>
+      {/* The skip link lives in the root layout so it also covers the admin
+          shell; nothing is rendered here so the tab order starts at the navbar. */}
       {/* The navbar reads the current path (URL data), so it streams in behind a
           boundary while the static fallback keeps the layout stable. */}
       <Suspense
@@ -39,7 +35,21 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <Footer settings={settings} />
-      <CartDrawer brandName={settings.brandName} whatsappNumber={settings.whatsappNumber} />
+      {/*
+        The drawer closes itself when the route changes, which it detects with
+        `usePathname()` — URL data. It is mounted here, in the layout shared by
+        every site page, so the hook makes URL data a dependency of all of them
+        unless it sits behind a boundary. Without this Suspense wrapper the
+        static `/bill/[reference]` page failed to prerender with
+        "usePathname() in a Client Component outside of <Suspense>".
+
+        The fallback is `null` because the drawer is a hidden, fixed overlay:
+        there is nothing visible to hold space for, and rendering a placeholder
+        would flash a second panel during navigation.
+      */}
+      <Suspense fallback={null}>
+        <CartDrawer brandName={settings.brandName} whatsappNumber={settings.whatsappNumber} />
+      </Suspense>
     </CartProvider>
   );
 }

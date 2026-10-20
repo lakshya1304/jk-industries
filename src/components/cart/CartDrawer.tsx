@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { Check, ShoppingBag, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useCart, lineKey } from "@/components/cart/CartProvider";
@@ -45,6 +46,30 @@ export function CartDrawer({
       document.body.style.overflow = "";
     };
   }, [drawerOpen, closeDrawer]);
+
+  /*
+    Close the drawer whenever the route changes.
+
+    The drawer is a fixed overlay that persists across client-side navigation,
+    so choosing "Proceed to Order Request" used to arrive at /cart with the
+    panel still open on top of it. The button's own onClick now closes it for
+    the intended path, and this covers every other one (browser back/forward, a
+    link followed from inside the drawer, or a future caller that forgets).
+
+    The hook lives here rather than in CartProvider on purpose: the provider
+    wraps every route, and calling `usePathname()` there made URL data a
+    dependency of every page, which broke prerendering of the static bill page
+    ("URL data usePathname() in a Client Component outside of <Suspense>").
+    This component only mounts an overlay, so the same hook is harmless.
+  */
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    if (lastPath.current !== pathname) {
+      lastPath.current = pathname;
+      closeDrawer();
+    }
+  }, [pathname, closeDrawer]);
 
   const cartLink = waLink(
     whatsappNumber,
