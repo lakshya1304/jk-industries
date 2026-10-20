@@ -2,6 +2,7 @@ import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { put, del } from "@vercel/blob";
 import { getAdminApiSession, unauthorizedResponse } from "@/lib/api-auth";
+import { prisma } from "@/lib/prisma";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const EXT: Record<string, string> = {
@@ -15,14 +16,20 @@ const EXT: Record<string, string> = {
 /**
  * POST /api/admin/upload — image upload (admin only).
  *
- * Validates MIME type and size, then stores the file:
- *   - With `BLOB_READ_WRITE_TOKEN` set (Vercel Blob store) → uploaded to the
- *     Vercel Blob CDN — works on serverless platforms.
- *   - Otherwise → written to public/uploads (local/VPS filesystem only).
+ * Validates MIME type and size, then stores the file using the first backend
+ * that is available:
+ *
+ *   1. `BLOB_READ_WRITE_TOKEN` set → Vercel Blob (CDN-hosted, best delivery).
+ *   2. Database (`StoredImage` table) → works anywhere, including Vercel, with
+ *      no third-party service. Served back by `GET /api/images/[id]`.
+ *   3. `public/uploads` on disk → local dev / a persistent VPS only. This is
+ *      the last resort because serverless filesystems are read-only and any
+ *      file written there is discarded when the instance is recycled.
+ *
  * Filenames are random (timestamp + UUID) so they can never be guessed.
  *
  * DELETE /api/admin/upload?url=... — remove a previously uploaded image.
- * Only URLs produced by this route are accepted (Vercel Blob host or /uploads/).
+ * Only URLs produced by this route are accepted.
  */
 export async function POST(request: Request) {
   const session = await getAdminApiSession();
@@ -67,14 +74,28 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, url: blob.url }, { status: 201 });
     } catch (err) {
       console.error("[api/admin/upload] blob upload failed:", err);
-      return Response.json(
-        { error: "Could not store the image in blob storage. Please try again." },
-        { status: 500 }
-      );
+      // Fall through to the database rather than failing the upload outright —
+      // an expired token or a Blob outage should not block editing the
+      // catalogue, and the DB path serves the image just as well.
     }
   }
 
-  // 2) Local filesystem fallback (dev servers and persistent VPS hosting).
+  // 2) Database. The reliable default on serverless hosting, where there is no
+  //    writable filesystem and (unless a Blob store exists) no other storage.
+  try {
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const row = await prisma.storedImage.create({
+      data: { filename, mimeType: file.type, size: bytes.byteLength, data: bytes },
+      select: { id: true },
+    });
+    // Cache-busting is unnecessary: the id is unique per upload, so a replaced
+    // image always gets a new URL.
+    return Response.json({ ok: true, url: `/api/images/${row.id}` }, { status: 201 });
+  } catch (err) {
+    console.error("[api/admin/upload] database upload failed:", err);
+  }
+
+  // 3) Local filesystem (dev servers and persistent VPS hosting).
   const dir = path.join(process.cwd(), "public", "uploads");
   try {
     await mkdir(dir, { recursive: true });
@@ -85,7 +106,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "Could not store the image. On Vercel, create a Blob store (Storage tab) so uploads use CDN storage.",
+          "Could not store the image. Vercel Blob and the database both failed — check the deployment logs.",
       },
       { status: 500 }
     );
@@ -102,6 +123,18 @@ export async function DELETE(request: Request) {
   if (!url) return Response.json({ error: "No image URL was provided." }, { status: 400 });
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+
+  // Database-stored image → delete the row.
+  const dbMatch = /^\/api\/images\/([\w-]+)$/.exec(url);
+  if (dbMatch) {
+    try {
+      await prisma.storedImage.delete({ where: { id: dbMatch[1] } });
+      return Response.json({ ok: true, deleted: true });
+    } catch {
+      // Already gone — treat as success so the UI can drop it from the list.
+      return Response.json({ ok: true, deleted: false });
+    }
+  }
 
   // Only allow deleting files this app created.
   if (url.startsWith("/uploads/")) {

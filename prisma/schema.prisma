@@ -1,7 +1,7 @@
-// Super Cleaner — JK Industries
+// Super Cleaner - JK Industries
 // Database schema.
 //
-// The provider is set to `postgresql` (production — Vercel + Prisma Postgres).
+// The provider is set to `postgresql` (production - Vercel + Prisma Postgres).
 // For a pure-SQLite local sandbox, change the provider to "sqlite", point
 // DATABASE_URL at "file:./dev.db" and run `npm run db:push`.
 // The schema intentionally avoids provider-specific features (enums, Json) so it
@@ -109,11 +109,9 @@ model OrderItem {
   unitWholesale Float?
   quantity      Int
   lineTotal     Float
-  /**
-   * Units of the underlying pack size this line reserved. Equals `quantity`
-   * for normal lines and `quantity × unitsPerCarton` for carton lines, so
-   * releasing stock is exact even if the product's carton size later changes.
-   */
+  /// Units of the underlying pack size this line reserved. Equals `quantity`
+  /// for normal lines and `quantity x unitsPerCarton` for carton lines, so
+  /// releasing stock is exact even if the product's carton size later changes.
   stockUnits    Int     @default(0)
 
   @@index([orderId])
@@ -137,6 +135,29 @@ model Enquiry {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// Uploaded image bytes.
+//
+// Vercel Blob is used when `BLOB_READ_WRITE_TOKEN` is set. Serverless hosting
+// has no writable filesystem, so without a Blob store there would be nowhere to
+// put an upload. This table is that "nowhere": it keeps the bytes in the same
+// database the rest of the app already uses, so image uploads work on Vercel
+// with no extra account, token, or cost, and GET /api/images/[id] streams them
+// back with a long-lived immutable cache header.
+//
+// The payload is `Bytes` (bytea on PostgreSQL) rather than base64 text: that
+// avoids a 33% size overhead and needs no encoding on the way in or out.
+model StoredImage {
+  id        String   @id @default(cuid())
+  /// Original client filename, kept for debugging and download headers.
+  filename  String
+  /// MIME type as validated on upload; echoed back on read.
+  mimeType  String
+  /// Size in bytes, so listings can show sizes without loading the blob.
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
 }
 
 model Setting {

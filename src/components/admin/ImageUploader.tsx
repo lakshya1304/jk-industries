@@ -63,13 +63,14 @@ export function ImageUploader({
 
   /**
    * Remove an image. Images uploaded through this dashboard are also deleted
-   * from storage (Vercel Blob or public/uploads); external pasted URLs are just
-   * dropped from the list.
+   * from storage (Vercel Blob, the database, or public/uploads); external
+   * pasted URLs are just dropped from the list.
    */
   async function removeImage(src: string) {
     onChange(images.filter((s) => s !== src));
     const ours =
       src.startsWith("/uploads/") ||
+      /^\/api\/images\/[a-z0-9]{16,40}$/.test(src) ||
       /^https:\/\/[\w-]+\.public\.blob\.vercel-storage\.com\//.test(src);
     if (!ours) return;
     try {

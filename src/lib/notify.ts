@@ -180,3 +180,130 @@ export async function sendStatusNotification(opts: {
 export function manualWhatsAppLink(to: string, message: string): string {
   return `https://wa.me/${to}?text=${encodeURIComponent(message)}`;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Admin (new-order) notifications                                            */
+/* -------------------------------------------------------------------------- */
+
+/** One order line, mirroring the email payload. */
+export type AdminOrderItem = {
+  name: string;
+  packLabel: string;
+  quantity: number;
+  lineTotal: number;
+};
+
+export type AdminOrderData = {
+  reference: string;
+  customerName: string;
+  businessName: string | null;
+  mobile: string;
+  email: string | null;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  gstin: string | null;
+  notes: string | null;
+  items: AdminOrderItem[];
+  subtotal: number;
+  itemCount: number;
+};
+
+/**
+ * Build the new-order alert the admin receives on WhatsApp.
+ *
+ * Plain text with `*bold*` markers (WhatsApp renders those) and no markdown
+ * tables, because WhatsApp does not support them. Every value the customer
+ * supplied is included so the admin can act without opening the dashboard.
+ */
+export function buildAdminOrderMessage(order: AdminOrderData, brandName: string): string {
+  const money = (n: number) =>
+    `Rs.${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
+  const lines: string[] = [
+    `*NEW ORDER REQUEST*`,
+    `*${order.reference}*`,
+    "",
+    "*Customer*",
+    `Name: ${order.customerName}`,
+  ];
+
+  if (order.businessName) lines.push(`Business: ${order.businessName}`);
+  lines.push(`Mobile: ${order.mobile}`);
+  if (order.email) lines.push(`Email: ${order.email}`);
+  if (order.gstin) lines.push(`GSTIN: ${order.gstin}`);
+
+  lines.push(
+    "",
+    "*Delivery address*",
+    order.address,
+    `${order.city}, ${order.state} - ${order.pincode}`,
+    "",
+    `*Items (${order.itemCount} total)*`
+  );
+
+  for (const item of order.items) {
+    lines.push(`${item.quantity} x ${item.name} (${item.packLabel}) - ${money(item.lineTotal)}`);
+  }
+
+  lines.push("", `*Estimated subtotal: ${money(order.subtotal)}*`);
+
+  if (order.notes) lines.push("", "*Customer notes*", order.notes);
+
+  lines.push("", `Requested from the ${brandName} website.`);
+
+  return lines.join("\n");
+}
+
+export type AdminNotificationResult = {
+  /** True only when a provider accepted the message. */
+  ok: boolean;
+  /** "whatsapp" when the Cloud API accepted it; "none" when nothing is configured. */
+  channel: "whatsapp" | "none";
+  /** The exact text, so the caller can offer a one-click manual send. */
+  message: string;
+  /** Normalised admin number the alert belongs to. */
+  to: string;
+  error?: string;
+};
+
+/**
+ * Alert the admin that a new order request arrived.
+ *
+ * Sent to the shop's own WhatsApp number (`settings.whatsappNumber`), not the
+ * customer's — so one order produces exactly one alert and the customer sees
+ * nothing. Never throws: a provider outage must not fail the customer's order.
+ *
+ * Caveat worth knowing: the WhatsApp Cloud API only allows free-form business-
+ * initiated messages inside a 24-hour service window. Outside it, Meta rejects
+ * the send and the error is returned. `manualWhatsAppLink` still gives the admin
+ * a one-click way to deliver the identical text, and an approved template can be
+ * wired in later without changing callers.
+ */
+export async function sendAdminOrderNotification(opts: {
+  brandName: string;
+  adminWhatsappNumber: string;
+  order: AdminOrderData;
+}): Promise<AdminNotificationResult> {
+  const to = normalizeWhatsAppNumber(opts.adminWhatsappNumber);
+  const message = buildAdminOrderMessage(opts.order, opts.brandName);
+
+  try {
+    const wa = await sendViaWhatsApp(to, message);
+    if ("skipped" in wa) {
+      // Provider not configured — the caller can still send it manually.
+      return { ok: false, channel: "none", message, to };
+    }
+    if (!wa.ok) console.error("[notify] admin whatsapp alert failed:", wa.error);
+    return { ok: wa.ok, channel: "whatsapp", message, to, error: wa.error };
+  } catch (err) {
+    return {
+      ok: false,
+      channel: "none",
+      message,
+      to,
+      error: `Admin notification failed: ${(err as Error)?.message ?? String(err)}`,
+    };
+  }
+}

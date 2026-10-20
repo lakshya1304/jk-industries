@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { formatDate, formatINR } from "@/lib/utils";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
+import { buildAdminOrderMessage, manualWhatsAppLink } from "@/lib/notify";
+import { getSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { OrderStatusControl } from "@/components/admin/OrderStatusControl";
@@ -21,10 +23,37 @@ export default async function AdminOrderDetailPage({
   });
   if (!order) notFound();
 
+  const settings = await getSettings();
   const waNumber = normalizeWhatsAppNumber(order.mobile);
   const waHref = `https://wa.me/${waNumber}?text=${encodeURIComponent(
     `Hello ${order.customerName}, regarding your order request ${order.reference} from Super Cleaner:`
   )}`;
+
+  // Same text the automatic alert sends, so the manual fallback is identical.
+  const alertMessage = buildAdminOrderMessage(
+    {
+      reference: order.reference,
+      customerName: order.customerName,
+      businessName: order.businessName,
+      mobile: order.mobile,
+      email: order.email,
+      address: order.address,
+      city: order.city,
+      state: order.state,
+      pincode: order.pincode,
+      gstin: order.gstin,
+      notes: order.notes,
+      items: order.items.map((i) => ({
+        name: i.productName,
+        packLabel: i.packLabel,
+        quantity: i.quantity,
+        lineTotal: i.lineTotal,
+      })),
+      subtotal: order.subtotal,
+      itemCount: order.itemCount,
+    },
+    settings.brandName
+  );
 
   return (
     <div className="space-y-6">
@@ -202,6 +231,37 @@ export default async function AdminOrderDetailPage({
                 ))}
               </ol>
             )}
+          </section>
+
+          <section
+            aria-labelledby="order-alert-heading"
+            className="mt-6 rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6"
+          >
+            <h2 id="order-alert-heading" className="text-base font-extrabold text-navy-900">
+              Order alert
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-ink-mute">
+              New order requests are sent to your WhatsApp automatically when the WhatsApp
+              Business API is configured. Until then, use this button to send the full order
+              details to yourself in one tap.
+            </p>
+            <a
+              href={manualWhatsAppLink(normalizeWhatsAppNumber(settings.whatsappNumber), alertMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-full border border-fresh-600/40 bg-fresh-50 px-4 text-sm font-bold text-fresh-800 transition-colors hover:border-fresh-600/70 hover:bg-fresh-100"
+            >
+              <MessageCircle className="size-4" aria-hidden />
+              Send order alert to my WhatsApp
+            </a>
+            <details className="mt-3">
+              <summary className="cursor-pointer text-xs font-semibold text-ink-soft">
+                Preview the message
+              </summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded-xl bg-navy-50/70 p-3 text-[11px] leading-relaxed whitespace-pre-wrap text-navy-900">
+                {alertMessage}
+              </pre>
+            </details>
           </section>
         </aside>
       </div>

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { generateOrderReference } from "@/lib/utils";
 import { revalidateProducts } from "@/lib/products";
 import { sendOrderNotificationEmail } from "@/lib/email";
+import { getSettings } from "@/lib/settings";
+import { manualWhatsAppLink, sendAdminOrderNotification } from "@/lib/notify";
 import type { OrderRequestInput } from "@/lib/validation";
 
 /** User-facing error for order validation failures. */
@@ -20,6 +22,14 @@ export type CreatedOrder = {
   subtotal: number;
   itemCount: number;
   duplicate?: boolean;
+  /** True when email or WhatsApp confirmed delivery of the admin alert. */
+  adminNotified?: boolean;
+  /**
+   * One-click link that sends the new-order alert to the shop's WhatsApp.
+   * Present always, so the admin dashboard can offer it when no provider
+   * accepted the automatic send.
+   */
+  adminWhatsAppLink?: string;
 };
 
 /**
@@ -238,8 +248,12 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
   }
   if (order) revalidateProducts();
 
-  // Best-effort admin notification; failure must not fail the order.
-  await sendOrderNotificationEmail({
+  // Best-effort admin notifications; failure must never fail the order.
+  //
+  // Email and WhatsApp are dispatched together rather than in sequence: they hit
+  // different providers, so awaiting one before starting the other would add its
+  // latency to the customer's checkout for no benefit.
+  const orderData = {
     reference: order.reference,
     customerName: input.customerName,
     businessName: input.businessName ?? null,
@@ -249,11 +263,56 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
     city: input.city,
     state: input.state,
     pincode: input.pincode,
-    items: lines.map((l) => ({ name: l.productName, packLabel: l.packLabel, quantity: l.quantity, lineTotal: l.lineTotal })),
+    notes: input.notes ?? null,
+    items: lines.map((l) => ({
+      name: l.productName,
+      packLabel: l.packLabel,
+      quantity: l.quantity,
+      lineTotal: l.lineTotal,
+    })),
     subtotal,
-  });
+  };
 
-  return order;
+  const settings = await getSettings();
+
+  const [emailSent, waResult] = await Promise.all([
+    sendOrderNotificationEmail({
+      reference: order.reference,
+      customerName: orderData.customerName,
+      businessName: orderData.businessName,
+      mobile: orderData.mobile,
+      email: orderData.email,
+      address: orderData.address,
+      city: orderData.city,
+      state: orderData.state,
+      pincode: orderData.pincode,
+      items: orderData.items,
+      subtotal,
+    }),
+    sendAdminOrderNotification({
+      brandName: settings.brandName,
+      adminWhatsappNumber: settings.whatsappNumber,
+      order: { ...orderData, gstin: input.gstin ?? null, itemCount },
+    }),
+  ]);
+
+  // Record whether the admin was actually alerted, so the dashboard can show a
+  // one-click manual send when no provider is configured. Logged rather than
+  // stored: `OrderEvent` tracks customer status notifications, and adding an
+  // admin-only row there would show up in the customer's tracking timeline.
+  if (!emailSent && !waResult.ok) {
+    console.warn(
+      `[orders] admin not alerted for ${order.reference} (email=${emailSent}, whatsapp=${waResult.ok})`
+    );
+  }
+
+  // Expose the manual link so the caller can surface it immediately after
+  // checkout when automatic delivery was not possible.
+  return {
+    ...order,
+    adminNotified: emailSent || waResult.ok,
+    adminWhatsAppLink: manualWhatsAppLink(waResult.to, waResult.message),
+  };
 }
 
 /**
