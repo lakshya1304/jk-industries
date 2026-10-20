@@ -13,7 +13,9 @@ import { waLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Order Request Received",
-  robots: { index: false },
+  // A per-customer confirmation page: it holds no content of value to search
+  // and would leak order references if crawled.
+  robots: { index: false, follow: false },
 };
 
 type Params = Promise<{ reference: string }>;

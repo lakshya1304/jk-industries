@@ -5,6 +5,7 @@ import { getProductBySlug } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchase } from "@/components/product/ProductPurchase";
+import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { AvailabilityBadge } from "@/components/ui/Badge";
 import { Reveal } from "@/components/ui/Reveal";
 import { productEnquiryMessage, waLink } from "@/lib/whatsapp";
@@ -111,6 +112,10 @@ export async function ProductDetail({ slug }: { slug: string }) {
           </a>
         </Reveal>
       </div>
+
+      {/* Horizontal internal links to sibling products, so every product page
+          receives inbound links rather than depending on the catalogue alone. */}
+      <RelatedProducts currentSlug={slug} />
     </article>
   );
 }

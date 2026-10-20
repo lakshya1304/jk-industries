@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "How Super Cleaner / JK Industries collects, uses and protects the information you submit through this website.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default async function PrivacyPage() {

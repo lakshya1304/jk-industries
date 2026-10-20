@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Shipping & Returns Policy",
   description:
     "How Super Cleaner / JK Industries dispatches orders and handles shortages, damage and returns.",
+  alternates: { canonical: "/shipping-returns" },
 };
 
 export default async function ShippingReturnsPage() {

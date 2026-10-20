@@ -9,7 +9,8 @@ import { BillView } from "@/components/order/BillView";
 
 export const metadata: Metadata = {
   title: "Order Bill",
-  robots: { index: false },
+  // The customer's own bill, keyed by reference. Never indexed or followed.
+  robots: { index: false, follow: false },
 };
 
 type Params = Promise<{ reference: string }>;

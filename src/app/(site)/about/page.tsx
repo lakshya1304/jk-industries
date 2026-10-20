@@ -5,12 +5,21 @@ import { getActiveProducts } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { Reveal } from "@/components/ui/Reveal";
 import { NoImage } from "@/components/ui/NoImage";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { aboutPageSchema } from "@/lib/seo";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Us — Manufacturer of Super Cleaner Products",
   description:
-    "Super Cleaner is a cleaning and automotive care product range manufactured by JK Industries, supplied to retailers, wholesalers and distributors.",
+    "Super Cleaner is a cleaning and automotive care product range manufactured by JK Industries, supplied to retailers, wholesalers and distributors across India.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Super Cleaner | JK Industries",
+    description:
+      "Super Cleaner is a cleaning and automotive care product range manufactured by JK Industries and supplied directly to trade partners.",
+    url: "/about",
+  },
 };
 
 const APPROACH = [
@@ -38,6 +47,7 @@ export default async function AboutPage() {
 
   return (
     <div className="pt-24 md:pt-28">
+      <JsonLd data={aboutPageSchema(settings)} />
       {/* intro */}
       <section className="section pb-10">
         <div className="container-page grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16">

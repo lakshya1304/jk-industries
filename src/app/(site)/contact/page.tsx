@@ -4,12 +4,21 @@ import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { EnquiryForm } from "@/components/contact/EnquiryForm";
 import { Reveal } from "@/components/ui/Reveal";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { contactPageSchema } from "@/lib/seo";
 import { generalEnquiryMessage, waLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Contact & Dealership Enquiries",
   description:
     "Contact JK Industries for Super Cleaner product enquiries, wholesale pricing, bulk orders and dealership details.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Super Cleaner | JK Industries",
+    description:
+      "Product enquiries, wholesale pricing, bulk orders and dealership details — contact JK Industries directly.",
+    url: "/contact",
+  },
 };
 
 type SearchParams = Promise<{ type?: string }>;
@@ -46,6 +55,7 @@ async function ContactDetails() {
 
   return (
     <Reveal className="space-y-4">
+      <JsonLd data={contactPageSchema(settings)} />
       <div className="rounded-2xl border border-navy-900/8 bg-white p-6">
         <h2 className="text-base font-extrabold text-navy-900">Reach {settings.manufacturerName}</h2>
         <ul className="mt-5 space-y-4 text-sm">

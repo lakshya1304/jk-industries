@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "Track Order",
   description:
     "Track the status of your Super Cleaner order request with the mobile number you used.",
+  alternates: { canonical: "/track" },
+  // A lookup form with no unique content of its own — indexed so it can rank
+  // for "track order", but it is not a page worth deep-crawling.
+  robots: { index: true, follow: true },
 };
 
 type SearchParams = Promise<{ mobile?: string }>;

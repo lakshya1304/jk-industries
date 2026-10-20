@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
     "Terms for using the Super Cleaner website and submitting order requests to JK Industries.",
+  alternates: { canonical: "/terms" },
 };
 
 export default async function TermsPage() {

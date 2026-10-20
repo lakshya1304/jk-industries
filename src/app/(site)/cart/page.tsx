@@ -5,6 +5,9 @@ import { CheckoutClient } from "@/components/checkout/CheckoutClient";
 export const metadata: Metadata = {
   title: "Cart & Order Request",
   description: "Review your selected Super Cleaner products and submit your order request.",
+  // The cart is per-visitor state with no unique content. It is excluded from
+  // search so it cannot compete with, or be mistaken for, the real catalogue.
+  robots: { index: false, follow: true },
 };
 
 export default async function CartPage() {
