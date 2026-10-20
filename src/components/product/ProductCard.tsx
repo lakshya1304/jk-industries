@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { MessageCircle, Plus } from "lucide-react";
+import { Boxes, MessageCircle, Plus } from "lucide-react";
 import { AvailabilityBadge } from "@/components/ui/Badge";
 import { NoImage } from "@/components/ui/NoImage";
 import { Tilt } from "@/components/ui/Tilt";
@@ -33,6 +33,15 @@ export function ProductCard({
   const image = product.images[0] ?? null;
   const out = product.availability === "out_of_stock";
 
+  // Cartons are only offered when the catalogue knows how many units a carton
+  // holds and the chosen pack has a wholesale rate to bill it at. Otherwise
+  // there is nothing to price and bulk buying stays a WhatsApp enquiry.
+  const cartonUnits = product.unitsPerCarton ?? 0;
+  const cartonRate = selected?.wholesalePrice ?? null;
+  const cartonAvailable =
+    options.showWholesale && cartonUnits > 1 && cartonRate != null && !out;
+  const cartonPrice = cartonAvailable ? cartonRate! * cartonUnits : 0;
+
   const enquiryHref = selected
     ? waLink(
         options.whatsappNumber,
@@ -49,13 +58,26 @@ export function ProductCard({
 
   return (
     <Tilt className="h-full">
-      <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-navy-900/6 bg-white shadow-[0_1px_2px_rgba(11,31,58,0.04)] transition-[box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:border-navy-900/12 hover:shadow-[0_28px_56px_-26px_rgba(11,31,58,0.34)]">
+      <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-navy-900/6 bg-white shadow-[0_1px_2px_rgba(11,31,58,0.04)] transition-[box-shadow,border-color] duration-300 ease-[var(--ease-out-soft)] hover:border-navy-900/12 hover:shadow-[0_28px_56px_-26px_rgba(11,31,58,0.34)]">
+        {/*
+          Whole-card link. It is stretched over the card so a click anywhere —
+          image, title, empty space — opens the product. Interactive controls
+          (pack chips, Add to Cart, carton, WhatsApp) sit at `z-20`, above this
+          overlay, otherwise it would swallow their clicks.
+
+          The image and content blocks deliberately do NOT use `translateZ`.
+          Inside the tilt wrapper's `preserve-3d` context a transformed sibling
+          is hit-tested ahead of a plain `z-10` layer, which left the image dead
+          to clicks and the overlay unreachable. The tilt itself comes from the
+          wrapper's rotation, so nothing visual is lost.
+        */}
         <Link
           href={`/products/${product.slug}`}
-          className="relative block aspect-4/5 overflow-hidden bg-navy-50 [transform:translateZ(28px)]"
-          tabIndex={-1}
-          aria-hidden
-        >
+          className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fresh-600"
+          aria-label={`View ${product.name} details`}
+        />
+
+        <div className="relative block aspect-4/5 overflow-hidden bg-navy-50 [transform-style:preserve-3d]">
           {image ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -80,17 +102,12 @@ export function ProductCard({
               />
             </span>
           )}
-        </Link>
+        </div>
 
-        <div className="flex flex-1 flex-col gap-3 p-5 [transform:translateZ(40px)]">
+        <div className="relative flex flex-1 flex-col gap-3 p-5 [transform-style:preserve-3d]">
           <div>
             <h3 className="text-base leading-snug font-bold text-navy-900">
-              <Link
-                href={`/products/${product.slug}`}
-                className="underline-offset-4 hover:underline"
-              >
-                {product.name}
-              </Link>
+              {product.name}
             </h3>
             <p className="mt-1 text-xs font-semibold tracking-wide text-ink-mute uppercase">
               SKU {product.sku}
@@ -102,7 +119,7 @@ export function ProductCard({
 
           {packs.length > 0 && (
             <div
-              className="flex flex-wrap gap-1.5"
+              className="relative z-20 flex flex-wrap gap-1.5"
               role="group"
               aria-label={`Pack sizes for ${product.name}`}
             >
@@ -144,6 +161,11 @@ export function ProductCard({
                     </span>
                   </p>
                 )}
+                {cartonAvailable && (
+                  <p className="text-xs font-semibold text-ink-mute">
+                    {formatINR(cartonPrice)} per carton of {cartonUnits}
+                  </p>
+                )}
                 {!options.showMRP && (
                   <p className="text-sm font-semibold text-ink-soft">
                     Price on enquiry
@@ -164,7 +186,7 @@ export function ProductCard({
               onClick={() =>
                 selected && addItem(product, selected, product.minOrderQty)
               }
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+              className="relative z-20 inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-navy-900 px-4 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(11,31,58,0.8)] transition-[background-color,transform] duration-200 hover:bg-navy-800 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
             >
               <Plus className="size-4" aria-hidden />
               {out ? "Unavailable" : "Add to Cart"}
@@ -174,17 +196,28 @@ export function ProductCard({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Enquire on WhatsApp about ${product.name}`}
-              className="grid size-10 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
+              className="relative z-20 grid size-10 place-items-center rounded-full bg-[#25D366]/12 text-[#128C4A] transition-[background-color,transform] duration-200 hover:bg-[#25D366]/25 active:scale-[0.97]"
             >
               <MessageCircle className="size-4.5" aria-hidden />
             </a>
           </div>
-          <Link
-            href={`/products/${product.slug}`}
-            className="inline-flex h-9 items-center justify-center rounded-full border border-navy-900/15 text-sm font-semibold text-navy-900 transition-colors duration-200 hover:border-navy-900/40 hover:bg-navy-50"
-          >
-            View Details
-          </Link>
+
+          {cartonAvailable && (
+            <button
+              type="button"
+              onClick={() =>
+                selected &&
+                addItem(product, selected, 1, {
+                  unitsPerCarton: cartonUnits,
+                  unitWholesale: cartonRate!,
+                })
+              }
+              className="relative z-20 inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-fresh-600/40 bg-fresh-50 px-3 text-xs font-bold text-fresh-800 transition-[background-color,border-color,transform] duration-200 hover:border-fresh-600/70 hover:bg-fresh-100 active:scale-[0.97]"
+            >
+              <Boxes className="size-3.5" aria-hidden />
+              Add carton ({cartonUnits} × {selected?.label}) · {formatINR(cartonPrice)}
+            </button>
+          )}
         </div>
       </article>
     </Tilt>

@@ -4,28 +4,23 @@ import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { revalidateProducts } from "@/lib/products";
 import { manualWhatsAppLink, sendStatusNotification } from "@/lib/notify";
+import { restockPacks } from "@/lib/orders";
 import { revalidatePath } from "next/cache";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Put the reserved quantity of every tracked pack size back into stock. */
+/**
+ * Put the reserved quantity of every tracked pack size back into stock.
+ *
+ * Restores `stockUnits` (not `quantity`) so carton lines — which reserve
+ * `quantity × unitsPerCarton` — release exactly what they took.
+ */
 async function releaseOrderStock(orderId: string) {
   const items = await prisma.orderItem.findMany({
     where: { orderId },
-    select: { packSizeId: true, quantity: true },
+    select: { packSizeId: true, quantity: true, stockUnits: true },
   });
-  for (const item of items) {
-    if (!item.packSizeId) continue;
-    const pack = await prisma.packSize.findUnique({
-      where: { id: item.packSizeId },
-      select: { stock: true },
-    });
-    if (pack?.stock == null) continue;
-    await prisma.packSize.update({
-      where: { id: item.packSizeId },
-      data: { stock: pack.stock + item.quantity },
-    });
-  }
+  await restockPacks(items);
 }
 
 /**

@@ -67,4 +67,11 @@ export type CartItem = {
   mrp: number;
   quantity: number;
   minOrderQty: number;
+  /**
+   * Cartons hold `unitsPerCarton` of the chosen pack and are billed at the
+   * pack's wholesale rate rather than MRP. `quantity` counts cartons, not
+   * units. The server re-derives everything from the product record.
+   */
+  isCarton?: boolean;
+  unitsPerCarton?: number;
 };

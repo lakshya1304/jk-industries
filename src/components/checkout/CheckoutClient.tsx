@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import { ArrowRight, ShieldCheck, ShoppingCart, Trash2 } from "lucide-react";
-import { useCart } from "@/components/cart/CartProvider";
+import { useCart, lineKey } from "@/components/cart/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
@@ -70,6 +70,7 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
         productId: i.productId,
         packSizeId: i.packSizeId,
         quantity: i.quantity,
+        ...(i.isCarton ? { isCarton: true } : {}),
       })),
       customerName: form.customerName,
       businessName: form.businessName,
@@ -155,9 +156,11 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
           </h2>
           <ul className="mt-4 divide-y divide-navy-900/6">
             <AnimatePresence initial={false}>
-              {items.map((item) => (
+              {items.map((item) => {
+                const key = lineKey(item);
+                return (
                 <motion.li
-                  key={`${item.productId}::${item.packSizeId}`}
+                  key={key}
                   layout
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -183,13 +186,15 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                       {item.name}
                     </Link>
                     <p className="mt-0.5 text-xs text-ink-mute">
-                      {item.packLabel} · {formatINR(item.mrp)} each
+                      {item.isCarton
+                        ? `Wholesale carton · ${item.unitsPerCarton} × ${item.packLabel} · ${formatINR(item.mrp)} per carton`
+                        : `${item.packLabel} · ${formatINR(item.mrp)} each`}
                     </p>
                   </div>
                   <QuantityStepper
                     size="sm"
                     value={item.quantity}
-                    onChange={(q) => updateQuantity(item.productId, item.packSizeId, q)}
+                    onChange={(q) => updateQuantity(key, q)}
                   />
                   <span className="w-20 text-right text-sm font-bold text-navy-900">
                     {formatINR(item.mrp * item.quantity)}
@@ -197,13 +202,14 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                   <button
                     type="button"
                     aria-label={`Remove ${item.name}`}
-                    onClick={() => removeItem(item.productId, item.packSizeId)}
+                    onClick={() => removeItem(key)}
                     className="rounded-full p-2 text-ink-mute transition hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 className="size-4" aria-hidden />
                   </button>
                 </motion.li>
-              ))}
+                );
+              })}
             </AnimatePresence>
           </ul>
           <Link
@@ -367,7 +373,13 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                 <dt className="text-ink-soft">
                   {group[0].name}
                   <span className="block text-xs text-ink-mute">
-                    {group.map((g) => `${g.packLabel} × ${g.quantity}`).join(", ")}
+                    {group
+                      .map((g) =>
+                        g.isCarton
+                          ? `${g.quantity} carton${g.quantity === 1 ? "" : "s"} of ${g.unitsPerCarton} × ${g.packLabel}`
+                          : `${g.packLabel} × ${g.quantity}`
+                      )
+                      .join(", ")}
                   </span>
                 </dt>
                 <dd className="shrink-0 font-semibold text-navy-900">

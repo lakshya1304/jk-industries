@@ -145,11 +145,10 @@ export function BarChart({
             <div className="relative w-full flex-1 overflow-hidden rounded-t-lg bg-navy-50/60">
               <div
                 className={cn(
-                  "absolute bottom-0 w-full rounded-t-lg",
+                  "chart-column-grow absolute bottom-0 w-full rounded-t-lg",
                   i === maxIdx
                     ? "bg-[linear-gradient(180deg,var(--color-fresh-500),var(--color-fresh-700))]"
-                    : "bg-[linear-gradient(180deg,var(--color-navy-500),var(--color-navy-700))]",
-                  "animate-[grow-y_0.7s_var(--ease-out-soft)_both]"
+                    : "bg-[linear-gradient(180deg,var(--color-navy-500),var(--color-navy-700))]"
                 )}
                 style={{ height: `${pct}%`, animationDelay: `${i * 60}ms` }}
               />
@@ -193,7 +192,7 @@ export function RankBars({
             <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-navy-50">
               <div
                 className={cn(
-                  "h-full rounded-full animate-[grow-x_0.7s_var(--ease-out-soft)_both]",
+                  "chart-bar-grow h-full rounded-full",
                   tone === "fresh"
                     ? "bg-[linear-gradient(90deg,var(--color-fresh-400),var(--color-fresh-700))]"
                     : "bg-[linear-gradient(90deg,var(--color-navy-500),var(--color-navy-800))]"

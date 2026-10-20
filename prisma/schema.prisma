@@ -109,6 +109,12 @@ model OrderItem {
   unitWholesale Float?
   quantity      Int
   lineTotal     Float
+  /**
+   * Units of the underlying pack size this line reserved. Equals `quantity`
+   * for normal lines and `quantity × unitsPerCarton` for carton lines, so
+   * releasing stock is exact even if the product's carton size later changes.
+   */
+  stockUnits    Int     @default(0)
 
   @@index([orderId])
 }

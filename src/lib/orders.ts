@@ -62,6 +62,8 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
     unitWholesale: number | null;
     quantity: number;
     lineTotal: number;
+    /** Units of the underlying pack one line quantity consumes. */
+    unitsPerLine: number;
   };
   const lines: Line[] = [];
   const qtyPerProduct = new Map<string, number>();
@@ -78,23 +80,54 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
     if (product.availability === "out_of_stock") {
       throw new OrderError(`${product.name} is currently out of stock.`);
     }
+
+    // Carton lines are billed at the wholesale rate and consume one carton's
+    // worth of stock per unit ordered. Values are re-derived from the product
+    // record; the client only told us that it picked a carton.
+    const unitsPerLine = item.isCarton ? (product.unitsPerCarton ?? 0) : 1;
+    if (item.isCarton) {
+      if (!product.unitsPerCarton || product.unitsPerCarton < 1) {
+        throw new OrderError(
+          `${product.name} cannot be ordered by the carton — please order single packs.`
+        );
+      }
+      if (packSize.wholesalePrice == null) {
+        throw new OrderError(
+          `Wholesale pricing for ${product.name} (${packSize.label}) is not available. Please enquire on WhatsApp.`
+        );
+      }
+    }
+
+    const stockUnits = item.quantity * unitsPerLine;
     // Stock is tracked only for pack sizes that have a stock value set.
-    if (packSize.stock != null && item.quantity > packSize.stock) {
+    if (packSize.stock != null && stockUnits > packSize.stock) {
+      const availableCartons = Math.floor(packSize.stock / unitsPerLine);
       throw new OrderError(
-        `Only ${packSize.stock} unit${packSize.stock === 1 ? "" : "s"} of ${product.name} (${packSize.label}) are available right now.`
+        item.isCarton
+          ? `Only ${availableCartons} carton${availableCartons === 1 ? "" : "s"} of ${product.name} (${packSize.label}) are available right now.`
+          : `Only ${packSize.stock} unit${packSize.stock === 1 ? "" : "s"} of ${product.name} (${packSize.label}) are available right now.`
       );
     }
-    qtyPerProduct.set(product.id, (qtyPerProduct.get(product.id) ?? 0) + item.quantity);
+
+    const unitPrice =
+      item.isCarton && packSize.wholesalePrice != null
+        ? packSize.wholesalePrice * product.unitsPerCarton!
+        : packSize.mrp;
+
+    qtyPerProduct.set(product.id, (qtyPerProduct.get(product.id) ?? 0) + stockUnits);
     lines.push({
       productId: product.id,
       packSizeId: packSize.id,
       productName: product.name,
       sku: product.sku,
-      packLabel: packSize.label,
+      packLabel: item.isCarton
+        ? `${packSize.label} carton of ${product.unitsPerCarton}`
+        : packSize.label,
       unitMrp: packSize.mrp,
       unitWholesale: packSize.wholesalePrice,
       quantity: item.quantity,
-      lineTotal: Math.round(packSize.mrp * item.quantity * 100) / 100,
+      lineTotal: Math.round(unitPrice * item.quantity * 100) / 100,
+      unitsPerLine,
     });
   }
 
@@ -136,7 +169,20 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
               subtotal,
               itemCount,
               clientToken: input.clientToken ?? null,
-              items: { create: lines },
+              items: {
+                create: lines.map((l) => ({
+                  productId: l.productId,
+                  packSizeId: l.packSizeId,
+                  productName: l.productName,
+                  sku: l.sku,
+                  packLabel: l.packLabel,
+                  unitMrp: l.unitMrp,
+                  unitWholesale: l.unitWholesale,
+                  quantity: l.quantity,
+                  lineTotal: l.lineTotal,
+                  stockUnits: l.unitsPerLine * l.quantity,
+                })),
+              },
             },
             select: { id: true, reference: true, subtotal: true, itemCount: true },
           });
@@ -144,19 +190,32 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
           // Reserve stock for every tracked pack in one round-trip each, issued
           // together rather than one-at-a-time: fewer network hops inside the
           // transaction is what keeps a slow connection from timing it out.
+          //
+          // Several lines can target the same pack (a single pack *and* a carton
+          // of it), so the reservation is summed per pack first — issuing one
+          // update per line would otherwise compute the second from stale stock
+          // and silently lose the first reservation.
+          const reservedByPack = new Map<string, number>();
+          for (const line of lines) {
+            reservedByPack.set(
+              line.packSizeId,
+              (reservedByPack.get(line.packSizeId) ?? 0) + line.unitsPerLine * line.quantity
+            );
+          }
+
           const packs = await tx.packSize.findMany({
-            where: { id: { in: lines.map((l) => l.packSizeId) } },
+            where: { id: { in: [...reservedByPack.keys()] } },
             select: { id: true, stock: true },
           });
           const stockById = new Map(packs.map((p) => [p.id, p.stock]));
 
           await Promise.all(
-            lines.map((line) => {
-              const stock = stockById.get(line.packSizeId);
+            [...reservedByPack].map(([packSizeId, units]) => {
+              const stock = stockById.get(packSizeId);
               if (stock == null) return null;
               return tx.packSize.update({
-                where: { id: line.packSizeId },
-                data: { stock: Math.max(0, stock - line.quantity) },
+                where: { id: packSizeId },
+                data: { stock: Math.max(0, stock - units) },
               });
             })
           );
@@ -195,6 +254,48 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
   });
 
   return order;
+}
+
+/**
+ * Add previously reserved units back to pack stock, summed per pack.
+ *
+ * Two lines can target the same pack (a single pack and a carton of it), so
+ * deltas are accumulated before writing — updating once per item would read
+ * stale stock for the second and lose the first restore. Carton lines restore
+ * `stockUnits` (`quantity × unitsPerCarton`) rather than `quantity`.
+ *
+ * Best-effort: callers treat a failure as non-fatal, since the order itself
+ * has already been removed or cancelled.
+ */
+export async function restockPacks(
+  items: { packSizeId: string | null; quantity: number; stockUnits?: number }[]
+): Promise<void> {
+  const byPack = new Map<string, number>();
+  for (const item of items) {
+    if (!item.packSizeId) continue;
+    byPack.set(
+      item.packSizeId,
+      (byPack.get(item.packSizeId) ?? 0) + (item.stockUnits ?? item.quantity)
+    );
+  }
+  if (byPack.size === 0) return;
+
+  const packs = await prisma.packSize.findMany({
+    where: { id: { in: [...byPack.keys()] } },
+    select: { id: true, stock: true },
+  });
+  const stockById = new Map(packs.map((p) => [p.id, p.stock]));
+
+  await Promise.all(
+    [...byPack].map(([packSizeId, units]) => {
+      const stock = stockById.get(packSizeId);
+      if (stock == null) return null;
+      return prisma.packSize.update({
+        where: { id: packSizeId },
+        data: { stock: stock + units },
+      });
+    })
+  );
 }
 
 /** Look up an order by reference for the confirmation page. */

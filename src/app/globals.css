@@ -21,12 +21,25 @@
   --color-navy-700: #1a365d;
   --color-navy-600: #1e3a5f;
   --color-navy-500: #2c4a72;
+  --color-navy-300: #9db0cd;
   --color-navy-100: #dbe4f0;
   --color-navy-50: #eef3f9;
 
+  /*
+   * The `fresh` scale needs every step that components reference, not just the
+   * button steps. Anything missing resolves to nothing at all — e.g. a gradient
+   * built from an undefined `--color-fresh-400` computes to
+   * `background-image: none`, which silently erased the "healthy" bars in the
+   * inventory and best-seller charts. Keep this scale contiguous.
+   */
+  --color-fresh-900: #14532d;
+  --color-fresh-800: #166534;
   --color-fresh-700: #15803d;
   --color-fresh-600: #16a34a;
   --color-fresh-500: #22c55e;
+  --color-fresh-400: #4ade80;
+  --color-fresh-300: #86efac;
+  --color-fresh-200: #bbf7d0;
   --color-fresh-100: #dcfce7;
   --color-fresh-50: #f0fdf4;
 
@@ -134,13 +147,43 @@ html.dark {
   /* Card / panel / input backgrounds */
   --color-white: #101c31;
   --color-navy-50: #16233a;
-  --color-navy-100: #1e2c46;
   --color-fresh-50: #0f2a1c;
   --color-fresh-100: #123a24;
   /* Body copy */
   --color-ink: #eaf0fb;
   --color-ink-soft: #b3c1d6;
   --color-ink-mute: #8ea1bb;
+  /*
+   * `navy-100` (and `navy-200`) are NOT surfaces — they are only ever used as
+   * light text on the navy-900 sidebar and the navy-950 login page, both of
+   * which stay dark in every theme. Re-mapping them to a dark card colour, as
+   * this block used to, made the whole admin sidebar unreadable in dark mode.
+   * They are deliberately left alone so they keep their light tint.
+   */
+}
+
+/*
+ * Admin sidebar / login copy sits on a permanently dark surface, so its text
+ * must stay light in both themes. `text-navy-100/75` compiles to a literal
+ * colour that no solid-utility override reaches, so each opacity variant is
+ * pinned here (mirroring the `text-white/NN` block below).
+ */
+:where(.dark) :is(.text-navy-100, .text-navy-200) { color: #e7edf8; }
+
+:where(.dark) .text-navy-100\/50 { color: rgb(231 237 248 / 0.55); }
+:where(.dark) .text-navy-100\/60 { color: rgb(231 237 248 / 0.66); }
+:where(.dark) .text-navy-100\/70 { color: rgb(231 237 248 / 0.76); }
+:where(.dark) .text-navy-100\/75 { color: rgb(231 237 248 / 0.8); }
+:where(.dark) .text-navy-100\/80 { color: rgb(231 237 248 / 0.85); }
+:where(.dark) .text-navy-100\/90 { color: rgb(231 237 248 / 0.93); }
+
+/*
+ * The one place `navy-100` is a surface is a hover state on the products page.
+ * Since the variable is no longer remapped (it is light text elsewhere), that
+ * hover is darkened explicitly here instead of flashing near-white.
+ */
+:where(.dark) .hover\:bg-navy-100:hover {
+  background-color: #22314c;
 }
 
 /*
@@ -442,6 +485,26 @@ body {
   }
 }
 
+/*
+ * Entrance animation for the horizontal bar charts.
+ *
+ * Deliberately NOT the Tailwind arbitrary form
+ * `animate-[grow-x_0.7s_var(--ease-out-soft)_both]`: with `fill-mode: both` an
+ * animation that never gets to run (background tab, paused timeline, a browser
+ * that declines to start it) leaves the bar pinned at `scaleX(0)`, so the chart
+ * renders as a row of empty tracks. `backwards` gives the same grow-in effect
+ * while letting the element fall back to its natural full-width state whenever
+ * the animation does not run.
+ */
+.chart-bar-grow {
+  animation: grow-x 0.7s var(--ease-out-soft) backwards;
+}
+
+/* Vertical counterpart, for column charts. Same reasoning as above. */
+.chart-column-grow {
+  animation: grow-y 0.7s var(--ease-out-soft) backwards;
+}
+
 @keyframes grow-y {
   from {
     transform: scaleY(0);
@@ -533,5 +596,11 @@ body {
   /* Never leave an entrance animation stuck at its "from" state. */
   .chart-line-draw {
     stroke-dashoffset: 0 !important;
+  }
+
+  .chart-bar-grow,
+  .chart-column-grow {
+    animation: none !important;
+    transform: none !important;
   }
 }

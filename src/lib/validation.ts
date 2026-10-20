@@ -39,6 +39,12 @@ export const orderItemSchema = z.object({
   productId: z.string().min(1).max(64),
   packSizeId: z.string().min(1).max(64),
   quantity: z.coerce.number().int().min(1).max(10_000),
+  /**
+   * Set when the buyer chose carton (wholesale) quantities. `quantity` then
+   * counts cartons. The server re-checks the product's units-per-carton and
+   * wholesale rate itself — this flag only selects the pricing rule.
+   */
+  isCarton: z.boolean().optional(),
 });
 
 export const orderRequestSchema = z.object({

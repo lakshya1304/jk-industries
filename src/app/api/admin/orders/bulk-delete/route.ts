@@ -1,5 +1,6 @@
 import { getAdminApiSession, unauthorizedResponse, readJson } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { restockPacks } from "@/lib/orders";
 import { revalidateProducts } from "@/lib/products";
 import { revalidatePath } from "next/cache";
 
@@ -52,24 +53,9 @@ export async function POST(request: Request) {
     try {
       const items = await prisma.orderItem.findMany({
         where: { orderId: { in: holdsStock.map((o) => o.id) }, packSizeId: { not: null } },
-        select: { packSizeId: true, quantity: true },
+        select: { packSizeId: true, quantity: true, stockUnits: true },
       });
-      const totals = new Map<string, number>();
-      for (const it of items) {
-        if (!it.packSizeId) continue;
-        totals.set(it.packSizeId, (totals.get(it.packSizeId) ?? 0) + it.quantity);
-      }
-      for (const [packSizeId, qty] of totals) {
-        const pack = await prisma.packSize.findUnique({
-          where: { id: packSizeId },
-          select: { stock: true },
-        });
-        if (pack?.stock == null) continue;
-        await prisma.packSize.update({
-          where: { id: packSizeId },
-          data: { stock: pack.stock + qty },
-        });
-      }
+      await restockPacks(items);
       revalidateProducts();
     } catch (err) {
       console.error("[orders] could not restore stock before bulk delete:", err);

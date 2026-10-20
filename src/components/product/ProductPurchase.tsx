@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Plus, ShieldCheck } from "lucide-react";
+import { Boxes, MessageCircle, Plus, ShieldCheck } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { formatINR } from "@/lib/utils";
@@ -30,6 +30,15 @@ export function ProductPurchase({
   const packs = product.packSizes;
   const selected = packs[packIndex];
   const out = product.availability === "out_of_stock";
+
+  // Wholesale carton buying — offered only when the product says how many units
+  // a carton holds and the selected pack has a wholesale rate to bill it at.
+  const cartonUnits = product.unitsPerCarton ?? 0;
+  const cartonRate = selected?.wholesalePrice ?? null;
+  const cartonAvailable =
+    options.showWholesale && cartonUnits > 1 && cartonRate != null && !out;
+  const cartonPrice = cartonAvailable ? cartonRate! * cartonUnits : 0;
+  const [cartons, setCartons] = useState(1);
 
   const selectPack = (i: number) => {
     setPackIndex(i);
@@ -110,6 +119,41 @@ export function ProductPurchase({
         </div>
         <QuantityStepper value={quantity} onChange={setQuantity} min={1} />
       </div>
+
+      {/* wholesale carton */}
+      {cartonAvailable && (
+        <div className="mt-5 rounded-xl border border-fresh-600/30 bg-fresh-50/70 px-4 py-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-1.5 text-sm font-bold text-fresh-800">
+                <Boxes className="size-4" aria-hidden />
+                Buy wholesale by the carton
+              </p>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                {cartonUnits} × {selected?.label} per carton ·{" "}
+                <span className="font-bold text-fresh-800">{formatINR(cartonPrice)}</span> per
+                carton
+              </p>
+            </div>
+            <QuantityStepper value={cartons} onChange={setCartons} min={1} />
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              selected &&
+              addItem(product, selected, cartons, {
+                unitsPerCarton: cartonUnits,
+                unitWholesale: cartonRate!,
+              })
+            }
+            className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-fresh-600 px-5 text-sm font-bold text-white shadow-[0_14px_28px_-16px_rgba(22,163,74,0.9)] transition-[background-color,transform] duration-200 hover:bg-fresh-700 active:scale-[0.97]"
+          >
+            <Boxes className="size-4" aria-hidden />
+            Add {cartons} carton{cartons === 1 ? "" : "s"} ·{" "}
+            {formatINR(cartonPrice * cartons)}
+          </button>
+        </div>
+      )}
 
       {/* actions */}
       <div className="mt-6 grid gap-2.5 sm:grid-cols-2">

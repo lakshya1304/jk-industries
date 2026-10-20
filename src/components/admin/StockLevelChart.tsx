@@ -91,7 +91,7 @@ export function StockLevelChart({
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-navy-50">
                   <div
-                    className={cn("h-full rounded-full", tone, "animate-[grow-x_0.7s_var(--ease-out-soft)_both]")}
+                    className={cn("chart-bar-grow h-full rounded-full", tone)}
                     style={{ width: `${pct}%` }}
                   />
                 </div>

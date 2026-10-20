@@ -38,15 +38,20 @@ export function productEnquiryMessage(opts: {
 
 export function cartEnquiryMessage(opts: {
   brandName: string;
-  items: Pick<CartItem, "name" | "sku" | "packLabel" | "quantity">[];
+  items: Pick<
+    CartItem,
+    "name" | "sku" | "packLabel" | "quantity" | "isCarton" | "unitsPerCarton"
+  >[];
   note?: string;
 }): string {
   const lines = [
     `Hello ${opts.brandName},`,
     `I would like bulk pricing for the following:`,
     "",
-    ...opts.items.map(
-      (i, idx) => `${idx + 1}. ${i.name} (${i.sku}) — ${i.packLabel} × ${i.quantity}`
+    ...opts.items.map((i, idx) =>
+      i.isCarton
+        ? `${idx + 1}. ${i.name} (${i.sku}) — wholesale carton of ${i.unitsPerCarton} × ${i.packLabel} × ${i.quantity}`
+        : `${idx + 1}. ${i.name} (${i.sku}) — ${i.packLabel} × ${i.quantity}`
     ),
     "",
     "Please share your best price and availability. Thank you.",

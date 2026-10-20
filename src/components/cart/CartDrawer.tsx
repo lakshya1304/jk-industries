@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect } from "react";
 import { Check, ShoppingBag, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useCart } from "@/components/cart/CartProvider";
+import { useCart, lineKey } from "@/components/cart/CartProvider";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { NoImage } from "@/components/ui/NoImage";
@@ -113,10 +113,11 @@ export function CartDrawer({
                   <ul className="flex-1 divide-y divide-navy-900/6 overflow-y-auto px-5">
                     <AnimatePresence initial={false}>
                       {items.map((item) => {
+                        const key = lineKey(item);
                         const belowMoq = item.quantity < item.minOrderQty;
                         return (
                           <motion.li
-                            key={`${item.productId}::${item.packSizeId}`}
+                            key={key}
                             layout
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -151,11 +152,17 @@ export function CartDrawer({
                                   <p className="mt-0.5 text-xs text-ink-mute">
                                     {item.packLabel} · {item.sku}
                                   </p>
+                                  {item.isCarton && (
+                                    <p className="mt-0.5 text-xs font-semibold text-fresh-700">
+                                      Wholesale carton · {item.unitsPerCarton} ×{" "}
+                                      {item.packLabel}
+                                    </p>
+                                  )}
                                 </div>
                                 <button
                                   type="button"
                                   aria-label={`Remove ${item.name} from cart`}
-                                  onClick={() => removeItem(item.productId, item.packSizeId)}
+                                  onClick={() => removeItem(key)}
                                   className="rounded-full p-1.5 text-ink-mute transition hover:bg-red-50 hover:text-red-600"
                                 >
                                   <Trash2 className="size-4" aria-hidden />
@@ -165,7 +172,7 @@ export function CartDrawer({
                                 <QuantityStepper
                                   size="sm"
                                   value={item.quantity}
-                                  onChange={(q) => updateQuantity(item.productId, item.packSizeId, q)}
+                                  onChange={(q) => updateQuantity(key, q)}
                                 />
                                 <span className="text-sm font-bold text-navy-900">
                                   {formatINR(item.mrp * item.quantity)}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BarChart3, TrendingUp } from "lucide-react";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ORDER_STATUSES } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
@@ -96,6 +97,10 @@ async function loadAnalytics(now: Date): Promise<Analytics> {
  * best-selling products. All figures come from existing order data.
  */
 export async function AnalyticsPanel() {
+  // The 14-day window is anchored to "now", so this must resolve at request
+  // time. Without `connection()` the prerenderer reaches `new Date()` and Next
+  // rejects it as an unstable value.
+  await connection();
   const data = await loadAnalytics(new Date());
   const {
     totalOrders,

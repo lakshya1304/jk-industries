@@ -13,6 +13,9 @@ import type { CartItem, PackSizeDTO, ProductDTO } from "@/lib/types";
 
 const STORAGE_KEY = "sc-cart-v1";
 
+/** What a normal add-to-cart needs; carton lines add the unit count. */
+export type CartonOptions = { unitsPerCarton: number; unitWholesale: number };
+
 type CartContextValue = {
   items: CartItem[];
   totalItems: number;
@@ -21,9 +24,18 @@ type CartContextValue = {
   drawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
-  addItem: (product: ProductDTO, packSize: PackSizeDTO, quantity?: number) => void;
-  updateQuantity: (productId: string, packSizeId: string, quantity: number) => void;
-  removeItem: (productId: string, packSizeId: string) => void;
+  /**
+   * Add a line. Passing `carton` records the line as a wholesale carton of
+   * `unitsPerCarton` units, priced at the wholesale rate rather than MRP.
+   */
+  addItem: (
+    product: ProductDTO,
+    packSize: PackSizeDTO,
+    quantity?: number,
+    carton?: CartonOptions,
+  ) => void;
+  updateQuantity: (lineKey: string, quantity: number) => void;
+  removeItem: (lineKey: string) => void;
   clearCart: () => void;
   toast: string | null;
   dismissToast: () => void;
@@ -31,7 +43,15 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const itemKey = (productId: string, packSizeId: string) => `${productId}::${packSizeId}`;
+/**
+ * Identity of a cart line.
+ *
+ * A carton of a pack and a single pack are different products to the buyer, so
+ * they must not merge — the `:carton` suffix keeps them as separate lines even
+ * though they share a pack size.
+ */
+export const lineKey = (item: Pick<CartItem, "productId" | "packSizeId" | "isCarton">) =>
+  `${item.productId}::${item.packSizeId}${item.isCarton ? ":carton" : ""}`;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -85,57 +105,65 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addItem = useCallback(
-    (product: ProductDTO, packSize: PackSizeDTO, quantity = product.minOrderQty) => {
+    (
+      product: ProductDTO,
+      packSize: PackSizeDTO,
+      quantity = product.minOrderQty,
+      carton?: CartonOptions,
+    ) => {
       const qty = Math.max(1, quantity);
       setItems((prev) => {
-        const key = itemKey(product.id, packSize.id);
-        const existing = prev.find((i) => itemKey(i.productId, i.packSizeId) === key);
+        const incoming: CartItem = {
+          productId: product.id,
+          slug: product.slug,
+          name: product.name,
+          sku: product.sku,
+          image: product.images[0] ?? "",
+          packSizeId: packSize.id,
+          packLabel: packSize.label,
+          mrp: packSize.mrp,
+          quantity: qty,
+          minOrderQty: product.minOrderQty,
+          ...(carton
+            ? {
+                isCarton: true,
+                unitsPerCarton: carton.unitsPerCarton,
+                // What one carton costs, so every display path (line total,
+                // subtotal) works without knowing about cartons.
+                mrp: carton.unitWholesale * carton.unitsPerCarton,
+              }
+            : {}),
+        };
+        const key = lineKey(incoming);
+        const existing = prev.find((i) => lineKey(i) === key);
         if (existing) {
           return prev.map((i) =>
-            itemKey(i.productId, i.packSizeId) === key
-              ? { ...i, quantity: i.quantity + qty }
-              : i
+            lineKey(i) === key ? { ...i, quantity: i.quantity + qty } : i
           );
         }
-        return [
-          ...prev,
-          {
-            productId: product.id,
-            slug: product.slug,
-            name: product.name,
-            sku: product.sku,
-            image: product.images[0] ?? "",
-            packSizeId: packSize.id,
-            packLabel: packSize.label,
-            mrp: packSize.mrp,
-            quantity: qty,
-            minOrderQty: product.minOrderQty,
-          },
-        ];
+        return [...prev, incoming];
       });
-      showToast(`Added ${product.name} (${packSize.label})`);
+      showToast(
+        carton
+          ? `Added ${carton.unitsPerCarton} × ${packSize.label} carton of ${product.name}`
+          : `Added ${product.name} (${packSize.label})`,
+      );
     },
     [showToast]
   );
 
-  const updateQuantity = useCallback(
-    (productId: string, packSizeId: string, quantity: number) => {
-      setItems((prev) =>
-        prev
-          .map((i) =>
-            i.productId === productId && i.packSizeId === packSizeId
-              ? { ...i, quantity: Math.max(1, Math.min(10_000, quantity)) }
-              : i
-          )
-      );
-    },
-    []
-  );
-
-  const removeItem = useCallback((productId: string, packSizeId: string) => {
+  const updateQuantity = useCallback((key: string, quantity: number) => {
     setItems((prev) =>
-      prev.filter((i) => !(i.productId === productId && i.packSizeId === packSizeId))
+      prev.map((i) =>
+        lineKey(i) === key
+          ? { ...i, quantity: Math.max(1, Math.min(10_000, quantity)) }
+          : i
+      )
     );
+  }, []);
+
+  const removeItem = useCallback((key: string) => {
+    setItems((prev) => prev.filter((i) => lineKey(i) !== key));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
