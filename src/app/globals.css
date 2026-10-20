@@ -46,6 +46,8 @@
   --animate-float-slower: float-slow 13s ease-in-out infinite reverse;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-badge-pop: badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rise: rise 0.55s var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 0.4s var(--ease-out-soft) both;
 
   @keyframes float-slow {
     0%,
@@ -79,6 +81,26 @@
       opacity: 1;
     }
   }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -92,6 +114,7 @@ html {
 
 html.dark {
   color-scheme: dark;
+  --color-surface: #070f1d;
 }
 
 /*
@@ -99,14 +122,14 @@ html.dark {
  *
  * The navy-50…950 scale doubles as both "surfaces" (hero, footer, sidebar) and
  * "text/primary-button" colours, so flipping the whole scale would break the
- * dark surfaces. Instead the base tokens stay put and a handful of targeted
- * overrides re-map the light surfaces and text colours used by cards, panels,
- * inputs and body copy. `dark:` utilities remain available for one-offs.
+ * dark surfaces. Instead the base tokens stay put and a targeted set of
+ * overrides re-maps every light surface and text colour used by cards, panels,
+ * inputs, tables and body copy.
+ *
+ * Rule of thumb: in dark mode surfaces become dark cards and all text turns
+ * near-white or light grey, so nothing is ever dark-on-dark. `dark:` utilities
+ * remain available for one-offs.
  */
-html.dark {
-  --color-surface: #070f1d;
-}
-
 .dark {
   /* Card / panel / input backgrounds */
   --color-white: #101c31;
@@ -146,6 +169,14 @@ html.dark {
   color: #ffffff;
 }
 
+/* Text that must invert to dark, because it sits on a light surface that stays
+   light in dark mode (e.g. the white knob of a switch, fresh-green buttons). */
+.dark .bg-fresh-600,
+.dark .bg-fresh-500,
+.dark .bg-fresh-700 {
+  color: #04140a;
+}
+
 .dark .placeholder\:text-slate-400::placeholder {
   color: #7c8dab;
 }
@@ -156,6 +187,10 @@ html.dark {
 
 .dark .bg-navy-50\/60 {
   background-color: rgb(22 35 58 / 0.6);
+}
+
+.dark .bg-white\/85 {
+  background-color: rgb(16 28 49 / 0.85);
 }
 
 .dark .bg-white\/90 {
@@ -172,6 +207,10 @@ html.dark {
   color: #fcd34d;
 }
 
+.dark .border-amber-200 {
+  border-color: rgb(251 191 36 / 0.3);
+}
+
 .dark .bg-red-50 {
   background-color: rgb(127 29 29 / 0.3);
 }
@@ -183,6 +222,10 @@ html.dark {
 
 .dark .bg-slate-100 {
   background-color: #1e2c46;
+}
+
+.dark .bg-slate-300 {
+  background-color: #3b4a63;
 }
 
 .dark .text-slate-600 {
@@ -197,17 +240,54 @@ html.dark {
   color: #4ade80;
 }
 
-.dark .border-navy-900\/8,
 .dark .border-navy-900\/6,
+.dark .border-navy-900\/8,
 .dark .border-navy-900\/10,
 .dark .border-navy-900\/12,
 .dark .border-navy-900\/15 {
-  border-color: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.14);
+}
+
+.dark .border-dashed.border-navy-900\/15 {
+  border-color: rgb(255 255 255 / 0.2);
 }
 
 .dark .divide-navy-900\/6 > :not([hidden]) ~ :not([hidden]),
 .dark .divide-navy-900\/8 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(255 255 255 / 0.1);
+}
+
+/* Form controls: dark fill, light text, visible focus ring */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #16233a;
+  color: #eaf0fb;
+  border-color: rgb(255 255 255 / 0.16);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #7c8dab;
+}
+
+/* Scrollbars follow the theme so tables don't flash a bright track */
+.dark {
+  scrollbar-color: #33415c #0d1729;
+}
+
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0d1729;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #33415c;
+  border-radius: 9999px;
 }
 
 /* Slightly lift the card shadow so panels read against the dark page */
@@ -289,6 +369,92 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Charts & motion                                                     */
+/* ------------------------------------------------------------------ */
+
+/* Bars grow from their baseline. */
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom center;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom center;
+  }
+}
+
+/* Line charts draw themselves using pathLength=1. */
+.chart-line-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chart-draw 1.1s var(--ease-out-soft) 0.05s both;
+}
+
+@keyframes chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.chart-area-fade {
+  animation: fade-in 0.9s var(--ease-out-soft) 0.35s both;
+}
+
+.chart-donut-sweep {
+  animation: fade-in 0.8s var(--ease-out-soft) 0.1s both;
+}
+
+/* Press feedback shared by interactive cards. */
+.press-card {
+  transition:
+    transform 0.22s var(--ease-out-soft),
+    box-shadow 0.22s var(--ease-out-soft);
+}
+
+.press-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Stagger helper: children rise in sequence. */
+.stagger > * {
+  animation: rise 0.5s var(--ease-out-soft) both;
+}
+
+.stagger > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.14s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.18s;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 0.22s;
+}
+.stagger > *:nth-child(n + 7) {
+  animation-delay: 0.26s;
+}
+
+/* ------------------------------------------------------------------ */
 /* Accessibility — respect reduced motion                             */
 /* ------------------------------------------------------------------ */
 
@@ -304,5 +470,10 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Never leave an entrance animation stuck at its "from" state. */
+  .chart-line-draw {
+    stroke-dashoffset: 0 !important;
   }
 }

@@ -14,6 +14,8 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Sparkles,
+  Wallet,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +24,8 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/admin/revenue", label: "Revenue", icon: Wallet, exact: false },
+  { href: "/admin/insights", label: "AI insights", icon: Sparkles, exact: false },
   { href: "/admin/products", label: "Products", icon: Package, exact: false },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes, exact: false },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag, exact: false },

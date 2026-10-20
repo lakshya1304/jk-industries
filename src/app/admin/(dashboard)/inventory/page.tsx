@@ -52,6 +52,23 @@ export default async function AdminInventoryPage() {
       stock: r.stock as number,
     }));
 
+  // Product-level roll-up: one bar per product with its tracked packs summed, so
+  // the chart answers "which product is short" rather than "which pack".
+  const productAgg = new Map<string, { productName: string; stock: number }>();
+  for (const r of tracked) {
+    const entry = productAgg.get(r.productName) ?? { productName: r.productName, stock: 0 };
+    entry.stock += r.stock as number;
+    productAgg.set(r.productName, entry);
+  }
+  const productBars = [...productAgg.values()]
+    .sort((a, b) => a.stock - b.stock)
+    .map((p) => ({
+      key: p.productName,
+      label: "",
+      productName: p.productName,
+      stock: p.stock,
+    }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -102,7 +119,15 @@ export default async function AdminInventoryPage() {
         </div>
       )}
 
-      <StockLevelChart bars={chartBars} lowThreshold={LOW_STOCK_THRESHOLD} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <StockLevelChart
+          bars={productBars}
+          lowThreshold={LOW_STOCK_THRESHOLD}
+          mode="product"
+          maxBars={8}
+        />
+        <StockLevelChart bars={chartBars} lowThreshold={LOW_STOCK_THRESHOLD} maxBars={8} />
+      </div>
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-navy-900/15 bg-white p-12 text-center">
@@ -138,6 +163,7 @@ export default async function AdminInventoryPage() {
                         <StockCell
                           packSizeId={r.key}
                           stock={r.stock}
+                          mrp={r.mrp}
                           lowThreshold={LOW_STOCK_THRESHOLD}
                         />
                       </div>

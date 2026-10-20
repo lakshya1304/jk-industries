@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Download, Search, ShoppingBag } from "lucide-react";
+import { FileSpreadsheet, Search, ShoppingBag } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ORDER_STATUSES, ORDER_STATUS_LABELS } from "@/lib/constants";
-import { formatDate, formatINR } from "@/lib/utils";
-import { Badge } from "@/components/ui/Badge";
+import { ORDER_STATUSES } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { OrdersTable, type OrderRow } from "@/components/admin/OrdersTable";
 
 type SearchParams = Promise<{ q?: string; status?: string }>;
 
@@ -85,10 +84,10 @@ async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
         )}
         <a
           href={`/api/admin/orders/export${status ? `?status=${encodeURIComponent(status)}` : ""}`}
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-navy-900/15 px-5 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-50"
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-fresh-600 px-5 text-sm font-bold text-white transition-colors hover:bg-fresh-700"
         >
-          <Download className="size-4" aria-hidden />
-          Export CSV
+          <FileSpreadsheet className="size-4" aria-hidden />
+          Export Excel
         </a>
       </form>
 
@@ -105,81 +104,21 @@ async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
           </p>
         </div>
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-2xl border border-navy-900/8 bg-white md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[48rem] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-navy-900/8 text-left text-xs font-bold tracking-wide text-ink-mute uppercase">
-                    <th className="px-4 py-3">Reference</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Items</th>
-                    <th className="px-4 py-3">Est. total</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Received</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((o) => (
-                    <tr key={o.id} className="border-b border-navy-900/6 last:border-0 hover:bg-navy-50/40">
-                      <td className="px-4 py-3">
-                        <Link href={`/admin/orders/${o.id}`} className="font-bold text-navy-900 hover:text-fresh-700">
-                          {o.reference}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-navy-900">{o.customerName}</p>
-                        <p className="text-xs text-ink-mute">
-                          {o.mobile}
-                          {o.businessName ? ` · ${o.businessName}` : ""}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3 text-ink-soft">{o.itemCount}</td>
-                      <td className="px-4 py-3 font-semibold text-navy-900">{formatINR(o.subtotal)}</td>
-                      <td className="px-4 py-3">
-                        <Badge tone={o.status === "pending" ? "warning" : o.status === "cancelled" ? "danger" : o.status === "delivered" ? "success" : "navy"}>
-                          {ORDER_STATUS_LABELS[o.status] ?? o.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-ink-mute">{formatDate(o.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile cards */}
-          <ul className="space-y-3 md:hidden">
-            {orders.map((o) => (
-              <li key={o.id} className="rounded-2xl border border-navy-900/8 bg-white p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <Link
-                    href={`/admin/orders/${o.id}`}
-                    className="font-mono text-sm font-extrabold tracking-wide text-navy-900"
-                  >
-                    {o.reference}
-                  </Link>
-                  <Badge tone={o.status === "pending" ? "warning" : o.status === "cancelled" ? "danger" : o.status === "delivered" ? "success" : "navy"}>
-                    {ORDER_STATUS_LABELS[o.status] ?? o.status}
-                  </Badge>
-                </div>
-                <p className="mt-2 font-semibold text-navy-900">{o.customerName}</p>
-                <p className="text-xs text-ink-mute">
-                  {o.mobile}
-                  {o.businessName ? ` · ${o.businessName}` : ""}
-                </p>
-                <div className="mt-3 flex items-center justify-between border-t border-navy-900/8 pt-3 text-sm">
-                  <span className="text-ink-mute">
-                    {o.itemCount} item{o.itemCount === 1 ? "" : "s"} · {formatDate(o.createdAt)}
-                  </span>
-                  <span className="font-bold text-navy-900">{formatINR(o.subtotal)}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <OrdersTable
+          orders={orders.map(
+            (o): OrderRow => ({
+              id: o.id,
+              reference: o.reference,
+              customerName: o.customerName,
+              mobile: o.mobile,
+              businessName: o.businessName,
+              itemCount: o.itemCount,
+              subtotal: o.subtotal,
+              status: o.status,
+              createdAt: o.createdAt.toISOString(),
+            })
+          )}
+        />
       )}
     </>
   );

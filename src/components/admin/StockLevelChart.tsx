@@ -8,32 +8,49 @@ export type StockBar = {
 };
 
 /**
- * Horizontal bar chart of tracked packs ordered by lowest stock, so the packs
- * that need restocking first sit at the top. Colour encodes severity:
- * red = out of stock, amber = at/below the low threshold, green = healthy.
+ * Horizontal bar chart of tracked stock ordered by lowest first, so what needs
+ * restocking sits at the top. Colour encodes severity: red = out of stock,
+ * amber = at/below the low threshold, green = healthy.
+ *
+ * `mode` only changes the copy — "pack" lists one bar per pack size, "product"
+ * lists one bar per product with its packs rolled up.
  */
 export function StockLevelChart({
   bars,
   lowThreshold,
   maxBars = 10,
+  mode = "pack",
+  title,
 }: {
   bars: StockBar[];
   lowThreshold: number;
   maxBars?: number;
+  mode?: "pack" | "product";
+  title?: string;
 }) {
   const shown = bars.slice(0, maxBars);
   const max = Math.max(1, ...shown.map((b) => b.stock));
+  const critical = shown.filter((b) => b.stock <= lowThreshold).length;
+
+  const heading = title ?? (mode === "product" ? "Critical products" : "Critical stock levels");
+  const subtitle =
+    mode === "product"
+      ? `Total units per product, lowest first. Red is out of stock, amber is at or below ${lowThreshold} units.`
+      : `Lowest-tracked packs first. Red is out of stock, amber is at or below ${lowThreshold} units.`;
 
   return (
-    <div className="rounded-2xl border border-navy-900/8 bg-white p-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
+    <section className="rounded-2xl border border-navy-900/8 bg-white p-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-extrabold text-navy-900">Critical stock levels</h2>
-          <p className="mt-1 text-xs text-ink-mute">
-            Lowest-tracked packs first. Red is out of stock, amber is at or below {lowThreshold} units.
-          </p>
+          <h2 className="text-base font-extrabold text-navy-900">{heading}</h2>
+          <p className="mt-1 text-xs text-ink-mute">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3 text-[11px] font-semibold text-ink-mute">
+          {critical > 0 && (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 font-bold text-amber-700">
+              {critical} need attention
+            </span>
+          )}
           <Legend className="bg-fresh-500" label="Healthy" />
           <Legend className="bg-amber-500" label="Low" />
           <Legend className="bg-red-500" label="Out" />
@@ -57,7 +74,7 @@ export function StockLevelChart({
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="truncate text-xs font-semibold text-navy-900">
                     {bar.productName}
-                    <span className="ml-1.5 font-normal text-ink-mute">{bar.label}</span>
+                    {bar.label && <span className="ml-1.5 font-normal text-ink-mute">{bar.label}</span>}
                   </span>
                   <span
                     className={cn(
@@ -74,7 +91,7 @@ export function StockLevelChart({
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-navy-50">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-500", tone)}
+                    className={cn("h-full rounded-full", tone, "animate-[grow-x_0.7s_var(--ease-out-soft)_both]")}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -83,7 +100,7 @@ export function StockLevelChart({
           })}
         </ul>
       )}
-    </div>
+    </section>
   );
 }
 

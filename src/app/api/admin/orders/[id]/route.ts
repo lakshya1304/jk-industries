@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { revalidateProducts } from "@/lib/products";
 import { manualWhatsAppLink, sendStatusNotification } from "@/lib/notify";
+import { revalidatePath } from "next/cache";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -115,4 +116,52 @@ export async function PATCH(request: Request, { params }: Ctx) {
   } catch {
     return Response.json({ error: "Could not update the order." }, { status: 400 });
   }
+}
+
+/**
+ * DELETE /api/admin/orders/[id] — permanently remove one order request.
+ *
+ * Deleting is irreversible, so it is admin-only and never touches inventory
+ * silently: if the order still held reserved stock (anything not cancelled or
+ * delivered), that quantity is returned to the packs first. Order items and the
+ * status timeline are removed explicitly, in a transaction, so a partial delete
+ * can never leave orphaned rows behind.
+ */
+export async function DELETE(_request: Request, { params }: Ctx) {
+  const session = await getAdminApiSession();
+  if (!session) return unauthorizedResponse();
+
+  const { id } = await params;
+  const existing = await prisma.order.findUnique({ where: { id }, select: { id: true, status: true } });
+  if (!existing) return Response.json({ error: "Order not found." }, { status: 404 });
+
+  // Released outside the transaction because it touches PackSize rows; a failure
+  // here must not block the delete the admin explicitly asked for.
+  const holdsStock = existing.status !== "cancelled" && existing.status !== "delivered";
+  if (holdsStock) {
+    try {
+      await releaseOrderStock(id);
+      revalidateProducts();
+    } catch (err) {
+      console.error("[orders] could not restore stock before delete:", err);
+    }
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.orderEvent.deleteMany({ where: { orderId: id } }),
+      prisma.orderItem.deleteMany({ where: { orderId: id } }),
+      prisma.order.delete({ where: { id } }),
+    ]);
+  } catch (err) {
+    console.error("[orders] failed to delete order:", err);
+    return Response.json({ error: "Could not delete the order." }, { status: 500 });
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+  revalidatePath("/admin/revenue");
+  revalidatePath("/admin/inventory");
+
+  return Response.json({ ok: true, releasedStock: holdsStock });
 }

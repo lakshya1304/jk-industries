@@ -4,6 +4,7 @@ import { NavbarFallback } from "@/components/layout/NavbarFallback";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { getSettings } from "@/lib/settings";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <CartProvider>
+      <ScrollProgress />
       <a
         href="#main-content"
         className="sr-only z-100 rounded-md bg-navy-900 px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4"

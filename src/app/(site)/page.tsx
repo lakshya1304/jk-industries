@@ -1,6 +1,7 @@
 import { getSettings } from "@/lib/settings";
 import { getHeroImages } from "@/lib/products";
 import { Hero } from "@/components/home/Hero";
+import { TrustStrip } from "@/components/home/TrustStrip";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { BrandIntro } from "@/components/home/BrandIntro";
 import { WhyChoose } from "@/components/home/WhyChoose";
@@ -18,6 +19,7 @@ export default async function HomePage() {
         subtitle={settings.heroSubtitle}
         images={heroImages}
       />
+      <TrustStrip />
       <FeaturedProducts />
       <BrandIntro />
       <WhyChoose />

@@ -5,6 +5,7 @@ import { ENQUIRY_TYPE_LABELS } from "@/lib/constants";
 import { formatDate, formatINR } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 
 // This page reads live order/product counts, so it blocks on the server instead
 // of being validated during instant navigation.
@@ -71,12 +72,12 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Link
             key={s.label}
             href={s.href}
-            className="group rounded-2xl border border-navy-900/8 bg-white p-5 transition-shadow hover:shadow-[0_18px_40px_-30px_rgba(11,31,58,0.5)]"
+            className="press-card group rounded-2xl border border-navy-900/8 bg-white p-5 hover:shadow-[0_18px_40px_-30px_rgba(11,31,58,0.5)]"
           >
             <div className="flex items-center justify-between">
               <span className="grid size-10 place-items-center rounded-xl bg-navy-50 text-navy-800">
@@ -84,7 +85,9 @@ export default async function AdminOverviewPage() {
               </span>
               <TrendingUp className="size-4 text-ink-mute transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
             </div>
-            <p className="mt-4 text-3xl font-extrabold text-navy-900">{s.value}</p>
+            <p className="mt-4 text-3xl font-extrabold text-navy-900">
+              <AnimatedNumber value={s.value} />
+            </p>
             <p className="text-sm font-semibold text-navy-900">{s.label}</p>
             <p className="text-xs text-ink-mute">{s.hint}</p>
           </Link>
