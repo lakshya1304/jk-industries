@@ -604,3 +604,230 @@ body {
     transform: none !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Thermal receipt (80 mm)                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The receipt is laid out at a real paper width rather than a screen width, so
+ * a receipt printer gets 1:1 output instead of a scaled-down web page.
+ *
+ * 80 mm roll with the usual ~1 cm unprintable margin on each side leaves about
+ * 58–60 mm of usable width, so the paper box is 58 mm wide with the side
+ * padding living inside it. A dotted rule is used between sections because
+ * thermal printers reproduce a dot grid cleanly but render thin grey borders
+ * unreliably.
+ *
+ * The colours are hard-coded black-on-white rather than taken from theme
+ * tokens: the receipt represents paper, so it must look the same in light and
+ * dark mode. The dark theme remaps `--color-white` to a navy surface, which
+ * would otherwise render the receipt as black text on a dark card.
+ */
+.receipt {
+  width: 58mm;
+  max-width: 100%;
+  padding: 4mm 0;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.receipt-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+}
+
+/* Long strings (emails, addresses) must wrap rather than widen the paper. */
+.receipt-wrap,
+.receipt p {
+  overflow-wrap: anywhere;
+}
+
+.receipt-center {
+  text-align: center;
+}
+
+.receipt-brand {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.receipt-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.receipt-muted {
+  font-size: 9.5px;
+  color: #444;
+}
+
+.receipt-strong {
+  font-weight: 700;
+}
+
+/* Left label, right value — the classic receipt line. */
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.receipt-row > span:last-child {
+  text-align: right;
+}
+
+.receipt-item + .receipt-item {
+  margin-top: 2mm;
+}
+
+.receipt-item .receipt-row {
+  margin-top: 0.5mm;
+}
+
+.receipt-total {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.receipt-rule {
+  border: 0;
+  border-top: 1px dashed #000;
+  margin: 1mm 0;
+}
+
+.receipt-note {
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.receipt-thanks {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ */
+/* Print                                                               */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Printing runs against the live app, so the page being printed is whatever
+ * screen the user is on: the storefront bill page (navbar, footer, cart
+ * drawer) or the admin bill page (sidebar, sticky header, alert bell). None of
+ * that belongs on paper.
+ *
+ * Rather than blacklisting every piece of chrome — which silently breaks again
+ * whenever a component is added — only the element carrying `.print-area` is
+ * shown, and everything else is hidden. `.print-area` is applied by the bill
+ * pages to the wrapper that holds the document, so header, footer and sidebar
+ * all disappear together.
+ *
+ * The dark theme is deliberately overridden: thermal and greyscale printers
+ * would render dark surfaces as a solid black page, so print output is always
+ * forced to black on white and the `html.dark` colour remaps are neutralised.
+ */
+@media print {
+  /* Any explicit page size the app may request is overridden below. */
+  html {
+    color-scheme: light !important;
+    background: #fff !important;
+    scroll-behavior: auto !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Hide everything, then reveal only the print area and its contents. */
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+
+  .print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+
+  /*
+   * `.print-area` is absolutely positioned so it escapes the page shell's
+   * layout, but its ancestors can still reserve height (the storefront bill
+   * page sits inside a `pt-24` container, the admin page inside a padded
+   * `main`). Those gaps would print as blank space above the receipt, so the
+   * spacing is removed from the ancestor chain as well.
+   */
+  .print-area :is(.container-page, main, .space-y-5) {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  /* Explicitly kill the shell chrome even if a browser ignores `visibility`. */
+  .print-hidden,
+  header[data-app-chrome],
+  aside,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  /* Neutralise the dark theme so nothing prints as dark-on-dark. */
+  .dark,
+  .dark * {
+    --color-white: #ffffff;
+    --color-surface: #ffffff;
+    --color-navy-50: #ffffff;
+    --color-ink: #000000;
+    --color-ink-soft: #1a1a1a;
+    --color-ink-mute: #333333;
+    color: #000 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Preserve the receipt's own paper width on the sheet. */
+  .receipt {
+    width: 58mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    color: #000 !important;
+  }
+
+  /* Interactive-only affordances have no meaning on paper. */
+  button {
+    display: none !important;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* Keep each item block intact across a page break on long receipts. */
+  .receipt-item {
+    break-inside: avoid;
+  }
+}

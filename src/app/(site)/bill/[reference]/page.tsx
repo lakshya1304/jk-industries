@@ -5,8 +5,7 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { getOrderForBill } from "@/lib/orders";
 import { getSettings } from "@/lib/settings";
-import { BillDocument } from "@/components/order/BillDocument";
-import { PrintButton } from "@/components/order/PrintButton";
+import { BillView } from "@/components/order/BillView";
 
 export const metadata: Metadata = {
   title: "Order Bill",
@@ -38,17 +37,14 @@ async function BillContent({ params }: { params: Params }) {
 
   return (
     <>
-      <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link
-          href={`/order-confirmation/${order.reference}`}
-          className="inline-flex items-center gap-2 text-sm font-bold text-fresh-700 hover:underline"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          Back to order summary
-        </Link>
-        <PrintButton />
-      </div>
-      <BillDocument order={order} settings={settings} />
+      <Link
+        href={`/order-confirmation/${order.reference}`}
+        className="mx-auto mb-6 flex w-fit items-center gap-2 text-sm font-bold text-fresh-700 hover:underline"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to order summary
+      </Link>
+      <BillView order={order} settings={settings} />
     </>
   );
 }

@@ -361,3 +361,21 @@ export async function getOrderForBill(reference: string) {
     },
   });
 }
+
+/**
+ * Same shape as `getOrderForBill`, but keyed on the primary key.
+ *
+ * The admin bill route has the order's `id` (it comes from the URL), while the
+ * customer-facing bill route has the `reference`. They are different columns,
+ * so passing an id to `getOrderForBill` silently returns `null` and the page
+ * 404s.
+ */
+export async function getOrderForBillById(id: string) {
+  return prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: true,
+      events: { orderBy: { createdAt: "asc" } },
+    },
+  });
+}
