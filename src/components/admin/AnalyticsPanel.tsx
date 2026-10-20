@@ -137,17 +137,17 @@ export async function AnalyticsPanel() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         {/* trend */}
-        <div className="rounded-2xl border border-navy-900/8 bg-white p-5">
+        <div className="min-w-0 rounded-2xl border border-navy-900/8 bg-white p-5">
           <h3 className="text-sm font-extrabold text-navy-900">Request volume</h3>
           <div
-            className="mt-5 flex h-40 items-end gap-1.5"
+            className="mt-5 flex h-40 items-end gap-1"
             role="img"
             aria-label={`Daily order request volume for the last ${DAYS} days`}
           >
             {buckets.map((b) => (
-              <div key={b.key} className="group flex flex-1 flex-col items-center gap-1.5">
+              <div key={b.key} className="group flex min-w-0 flex-1 flex-col items-center gap-1.5">
                 <span className="text-[10px] font-bold text-ink-mute opacity-0 transition-opacity group-hover:opacity-100">
                   {b.orders}
                 </span>
@@ -156,14 +156,18 @@ export async function AnalyticsPanel() {
                   style={{ height: `${Math.max(4, (b.orders / maxOrders) * 100)}%` }}
                   title={`${b.orders} request(s) · ${formatINR(Math.round(b.value))}`}
                 />
-                <span className="text-[9px] font-semibold text-ink-mute">{b.label}</span>
+                {/* The label must not widen the bar, so it is taken out of the
+                    min-content calculation and allowed to be clipped. */}
+                <span className="w-full truncate text-center text-[9px] font-semibold text-ink-mute">
+                  {b.label}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
         {/* status mix */}
-        <div className="rounded-2xl border border-navy-900/8 bg-white p-5">
+        <div className="min-w-0 rounded-2xl border border-navy-900/8 bg-white p-5">
           <h3 className="text-sm font-extrabold text-navy-900">Status mix</h3>
           {totalOrders === 0 ? (
             <p className="mt-4 text-sm text-ink-mute">No order requests yet.</p>

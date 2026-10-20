@@ -144,9 +144,11 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-12">
       {/* ---------------- form ---------------- */}
-      <form onSubmit={handleSubmit} noValidate className="space-y-8">
+      {/* min-w-0 lets this grid item shrink below its min-content width, which
+          is what otherwise forces a ~560px floor on small screens. */}
+      <form onSubmit={handleSubmit} noValidate className="min-w-0 space-y-8">
         <section aria-labelledby="cart-items-heading" className="rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
           <h2 id="cart-items-heading" className="text-base font-extrabold text-navy-900">
             Your items{" "}
@@ -166,7 +168,7 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
                   transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center gap-3 py-4"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 py-4"
                 >
                   <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-navy-50">
                     {item.image ? (
@@ -178,7 +180,7 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                       <NoImage label={item.name} compact />
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-[8rem]">
                     <Link
                       href={`/products/${item.slug}`}
                       className="block truncate text-sm font-bold text-navy-900 hover:underline"
@@ -191,22 +193,24 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
                         : `${item.packLabel} · ${formatINR(item.mrp)} each`}
                     </p>
                   </div>
-                  <QuantityStepper
-                    size="sm"
-                    value={item.quantity}
-                    onChange={(q) => updateQuantity(key, q)}
-                  />
-                  <span className="w-20 text-right text-sm font-bold text-navy-900">
-                    {formatINR(item.mrp * item.quantity)}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${item.name}`}
-                    onClick={() => removeItem(key)}
-                    className="rounded-full p-2 text-ink-mute transition hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </button>
+                  <div className="flex items-center gap-3 max-sm:ml-auto">
+                    <QuantityStepper
+                      size="sm"
+                      value={item.quantity}
+                      onChange={(q) => updateQuantity(key, q)}
+                    />
+                    <span className="w-20 shrink-0 text-right text-sm font-bold text-navy-900">
+                      {formatINR(item.mrp * item.quantity)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${item.name}`}
+                      onClick={() => removeItem(key)}
+                      className="shrink-0 rounded-full p-2 text-ink-mute transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  </div>
                 </motion.li>
                 );
               })}
@@ -214,7 +218,7 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
           </ul>
           <Link
             href="/products"
-            className="mt-3 inline-block text-sm font-semibold text-fresh-700 underline-offset-4 hover:underline"
+            className="mt-3 inline-flex min-h-6 items-center text-sm font-semibold text-fresh-700 underline-offset-4 hover:underline"
           >
             + Add more products
           </Link>
@@ -364,7 +368,7 @@ export function CheckoutClient({ settings }: { settings: SiteSettings }) {
       </form>
 
       {/* ---------------- summary ---------------- */}
-      <aside aria-label="Order summary" className="lg:sticky lg:top-28 lg:self-start">
+      <aside aria-label="Order summary" className="min-w-0 lg:sticky lg:top-28 lg:self-start">
         <div className="rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
           <h2 className="text-base font-extrabold text-navy-900">Order summary</h2>
           <dl className="mt-4 space-y-2.5 text-sm">

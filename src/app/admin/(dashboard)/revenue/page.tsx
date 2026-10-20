@@ -106,8 +106,8 @@ async function RevenueContent({ searchParams }: { searchParams: SearchParams }) 
       </div>
 
       {/* ---------- trend + split ---------- */}
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <section className="rounded-2xl border border-navy-900/8 bg-white p-5">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-2xl border border-navy-900/8 bg-white p-5">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-base font-extrabold text-navy-900">Daily revenue</h2>

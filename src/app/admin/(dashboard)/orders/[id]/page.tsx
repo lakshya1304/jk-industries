@@ -52,8 +52,8 @@ export default async function AdminOrderDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
           <section className="rounded-2xl border border-navy-900/8 bg-white p-5 md:p-6">
             <h2 className="text-base font-extrabold text-navy-900">Customer &amp; delivery</h2>
             <dl className="mt-4 space-y-3 text-sm">

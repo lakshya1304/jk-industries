@@ -157,7 +157,7 @@ export function ProductCard({
                   onClick={() => setPackIndex(i)}
                   aria-pressed={i === packIndex}
                   className={cn(
-                    "rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors duration-200",
+                    "inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors duration-200",
                     i === packIndex
                       ? "border-navy-900 bg-navy-900 text-white"
                       : "border-navy-900/15 bg-white text-ink-soft hover:border-navy-900/35 hover:text-navy-900",
