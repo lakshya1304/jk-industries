@@ -158,7 +158,23 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
             © {year} {settings.brandName} — a brand of {settings.manufacturerName}. All rights
             reserved.
           </p>
-          <p>Prices and availability are confirmed at the time of order confirmation.</p>
+          {/*
+            Staff-only entry point. Sits in the utility bar rather than "Quick
+            links" so the customer-facing list stays purely shopper-oriented.
+            `/admin` redirects to the login page, so this exposes nothing.
+          */}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link
+              href="/admin"
+              className="font-semibold underline-offset-4 transition-colors hover:text-white hover:underline"
+            >
+              Admin
+            </Link>
+            <span aria-hidden className="text-white/20">
+              •
+            </span>
+            <p>Prices and availability are confirmed at the time of order confirmation.</p>
+          </div>
         </div>
       </div>
     </footer>
