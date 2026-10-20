@@ -20,6 +20,8 @@ export type OrderRow = {
   subtotal: number;
   status: string;
   createdAt: string;
+  /** Null when the shop was never alerted automatically for this order. */
+  adminNotifiedAt: string | null;
 };
 
 function badgeTone(status: string) {
@@ -30,6 +32,36 @@ function badgeTone(status: string) {
       : status === "delivered"
         ? "success"
         : "navy";
+}
+
+/**
+ * Whether the shop was automatically alerted about this order.
+ *
+ * Shown as a distinct column because "was I told?" is a different question from
+ * "what is this order's status?" — an order can be pending AND unalerted, which
+ * is exactly the case that needs a human to act.
+ */
+function AlertIndicator({ notifiedAt }: { notifiedAt: string | null }) {
+  if (notifiedAt) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-xs font-semibold text-fresh-700"
+        title={`Alert delivered ${formatDate(notifiedAt)}`}
+      >
+        <span className="size-1.5 rounded-full bg-fresh-600" aria-hidden />
+        Alerted
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"
+      title="No automatic alert was delivered. Open the order to send it manually."
+    >
+      <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+      Not alerted
+    </span>
+  );
 }
 
 /**
@@ -173,6 +205,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                 <th className="px-4 py-3">Items</th>
                 <th className="px-4 py-3">Est. total</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Alert</th>
                 <th className="px-4 py-3">Received</th>
                 <th className="w-14 px-4 py-3" />
               </tr>
@@ -211,6 +244,9 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   <td className="px-4 py-3 font-semibold text-navy-900">{formatINR(o.subtotal)}</td>
                   <td className="px-4 py-3">
                     <Badge tone={badgeTone(o.status)}>{ORDER_STATUS_LABELS[o.status] ?? o.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <AlertIndicator notifiedAt={o.adminNotifiedAt} />
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-mute">{formatDate(o.createdAt)}</td>
                   <td className="px-4 py-3">
@@ -261,6 +297,9 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                 <span className="font-bold text-navy-900">{formatINR(o.subtotal)}</span>
                 <RowDelete id={o.id} reference={o.reference} onDelete={remove} disabled={busy} />
               </div>
+            </div>
+            <div className="mt-2">
+              <AlertIndicator notifiedAt={o.adminNotifiedAt} />
             </div>
           </li>
         ))}

@@ -241,9 +241,18 @@ export default async function AdminOrderDetailPage({
               Order alert
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-ink-mute">
-              New order requests are sent to your WhatsApp automatically when the WhatsApp
-              Business API is configured. Until then, use this button to send the full order
-              details to yourself in one tap.
+              {order.adminNotifiedAt ? (
+                <>
+                  This order was sent to your WhatsApp automatically on{" "}
+                  {formatDate(order.adminNotifiedAt)}.
+                </>
+              ) : (
+                <>
+                  No automatic alert was delivered for this order. New orders are sent to
+                  your WhatsApp automatically when the WhatsApp Business API is configured;
+                  until then, use the button below to send the full details to yourself.
+                </>
+              )}
             </p>
             <a
               href={manualWhatsAppLink(normalizeWhatsAppNumber(settings.whatsappNumber), alertMessage)}

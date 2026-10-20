@@ -119,6 +119,7 @@ async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
               subtotal: o.subtotal,
               status: o.status,
               createdAt: o.createdAt.toISOString(),
+              adminNotifiedAt: o.adminNotifiedAt ? o.adminNotifiedAt.toISOString() : null,
             })
           )}
         />

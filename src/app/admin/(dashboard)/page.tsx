@@ -1,8 +1,16 @@
 import Link from "next/link";
-import { CircleAlert, MessageSquare, Package, ShoppingBag, TrendingUp } from "lucide-react";
+import {
+  CircleAlert,
+  MessageCircle,
+  MessageSquare,
+  Package,
+  ShoppingBag,
+  TrendingUp,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { ENQUIRY_TYPE_LABELS } from "@/lib/constants";
 import { formatDate, formatINR } from "@/lib/utils";
+import { whatsAppConfigured } from "@/lib/notify";
 import { Badge } from "@/components/ui/Badge";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
@@ -17,13 +25,16 @@ export default async function AdminOverviewPage() {
   // exhaust it (P2024) when the dashboard, /api/admin/alerts and other admin
   // pages were opened together. groupBy returns the totals and the per-status
   // breakdowns in a single round trip each.
-  const [productCounts, orderCounts, enquiryCounts, recentOrders, recentEnquiries] =
+  const [productCounts, orderCounts, enquiryCounts, recentOrders, recentEnquiries, unalertedOrders] =
     await Promise.all([
       prisma.product.groupBy({ by: ["active"], _count: { _all: true } }),
       prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.enquiry.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
       prisma.enquiry.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
+      // Orders the shop was never automatically told about. Counted here rather
+      // than derived from a page of results, so the number is the true total.
+      prisma.order.count({ where: { adminNotifiedAt: null } }),
     ]);
 
   const sum = (rows: { _count: { _all: number } }[]) =>
@@ -68,6 +79,42 @@ export default async function AdminOverviewPage() {
           Manage the Super Cleaner catalogue, order requests and customer enquiries.
         </p>
       </div>
+
+      {!whatsAppConfigured() && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <MessageCircle className="mt-0.5 size-5 shrink-0" aria-hidden />
+          <div>
+            <p className="font-semibold">Automatic WhatsApp alerts are off</p>
+            <p className="mt-1 leading-relaxed">
+              No WhatsApp Business API credentials are configured, so new orders do not
+              reach your phone by themselves. You can still send the full order details in
+              one tap from any order page. To switch automatic alerts on, set{" "}
+              <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-[11px]">
+                WHATSAPP_ACCESS_TOKEN
+              </code>{" "}
+              and{" "}
+              <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-[11px]">
+                WHATSAPP_PHONE_NUMBER_ID
+              </code>{" "}
+              — see the README.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {unalertedOrders > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-navy-900/10 bg-navy-50 p-4 text-sm font-semibold text-navy-900">
+          <CircleAlert className="size-5 shrink-0" aria-hidden />
+          <span>
+            {unalertedOrders} order{unalertedOrders === 1 ? "" : "s"} arrived without an
+            automatic alert.{" "}
+            <Link href="/admin/orders" className="underline underline-offset-2">
+              Review them
+            </Link>
+            .
+          </span>
+        </div>
+      )}
 
       {pendingOrders > 0 && (
         <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">

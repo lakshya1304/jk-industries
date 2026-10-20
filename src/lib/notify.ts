@@ -79,29 +79,69 @@ async function sendViaWhatsApp(to: string, body: string): Promise<ProviderResult
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneId) return { skipped: true };
 
-  try {
-    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { preview_url: false, body },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      const detail = (await res.text()).slice(0, 300);
-      return { ok: false, error: `WhatsApp API responded ${res.status}: ${detail}` };
+  const endpoint = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  /** One send attempt; returns null on success or the error text on failure. */
+  async function attempt(payload: unknown): Promise<string | null> {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (res.ok) return null;
+      return `WhatsApp API responded ${res.status}: ${(await res.text()).slice(0, 300)}`;
+    } catch (err) {
+      return `WhatsApp request failed: ${(err as Error)?.message ?? String(err)}`;
     }
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: `WhatsApp request failed: ${(err as Error)?.message ?? String(err)}` };
   }
+
+  // Preferred: free-form text. Only permitted inside a 24-hour window that the
+  // recipient opened by messaging the business number.
+  const freeFormError = await attempt({
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: { preview_url: false, body },
+  });
+  if (freeFormError === null) return { ok: true };
+
+  // Outside that window Meta rejects free-form text, so fall back to a
+  // pre-approved template when one is configured. Without this the automatic
+  // alert would fail exactly when it matters — a customer ordering overnight.
+  const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
+  if (templateName) {
+    const templateError = await attempt({
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: process.env.WHATSAPP_TEMPLATE_LANG || "en" },
+        components: [
+          {
+            type: "body",
+            parameters: [{ type: "text", text: body.slice(0, 1024) }],
+          },
+        ],
+      },
+    });
+    if (templateError === null) return { ok: true };
+    return {
+      ok: false,
+      error: `Text send failed (${freeFormError}). Template "${templateName}" also failed (${templateError}). See README > WhatsApp for the required template shape.`,
+    };
+  }
+
+  return {
+    ok: false,
+    error: `${freeFormError} — this usually means the 24-hour window is closed. Set WHATSAPP_TEMPLATE_NAME to an approved template so alerts send automatically at any time.`,
+  };
 }
 
 /**
@@ -271,22 +311,27 @@ export type AdminNotificationResult = {
 /**
  * Alert the admin that a new order request arrived.
  *
- * Sent to the shop's own WhatsApp number (`settings.whatsappNumber`), not the
- * customer's — so one order produces exactly one alert and the customer sees
- * nothing. Never throws: a provider outage must not fail the customer's order.
+ * Recipient resolution:
+ *   1. `WHATSAPP_ADMIN_NUMBER` env var when set — lets alerts go to a personal
+ *      phone while the business number stays customer-facing.
+ *   2. Otherwise the shop's own `settings.whatsappNumber`.
  *
- * Caveat worth knowing: the WhatsApp Cloud API only allows free-form business-
- * initiated messages inside a 24-hour service window. Outside it, Meta rejects
- * the send and the error is returned. `manualWhatsAppLink` still gives the admin
- * a one-click way to deliver the identical text, and an approved template can be
- * wired in later without changing callers.
+ * Never the customer's number, so one order yields exactly one alert and the
+ * customer sees nothing. Never throws: a provider outage must not fail the
+ * customer's order.
+ *
+ * Delivery reliability: free-form text is attempted first, then an approved
+ * template (`WHATSAPP_TEMPLATE_NAME`) if the text attempt is rejected — which is
+ * what happens once the 24-hour customer-service window has closed. See the
+ * README for the template shape.
  */
 export async function sendAdminOrderNotification(opts: {
   brandName: string;
   adminWhatsappNumber: string;
   order: AdminOrderData;
 }): Promise<AdminNotificationResult> {
-  const to = normalizeWhatsAppNumber(opts.adminWhatsappNumber);
+  const override = process.env.WHATSAPP_ADMIN_NUMBER?.replace(/[^\d]/g, "");
+  const to = normalizeWhatsAppNumber(override || opts.adminWhatsappNumber);
   const message = buildAdminOrderMessage(opts.order, opts.brandName);
 
   try {
@@ -306,4 +351,9 @@ export async function sendAdminOrderNotification(opts: {
       error: `Admin notification failed: ${(err as Error)?.message ?? String(err)}`,
     };
   }
+}
+
+/** True when the WhatsApp Cloud API has the credentials it needs. */
+export function whatsAppConfigured(): boolean {
+  return Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
 }

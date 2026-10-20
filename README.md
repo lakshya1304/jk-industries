@@ -80,6 +80,7 @@ Retailers, wholesalers and distributors browse a unified catalogue, build a cart
 | 📋 | **Order requests** | Multi-product carts re-priced and re-validated entirely on the server |
 | 📊 | **AI insights** | Demand forecasts, restock priority, anomalies — computed from your own data, no API key |
 | 🔔 | **Status notifications** | Customers are told the moment an order moves, automatically when possible |
+| 📥 | **New-order alerts** | The shop's own WhatsApp gets every new order, in full, the moment it arrives |
 | 🌗 | **Light & dark themes** | Every surface tuned for contrast in both, including charts and admin nav |
 
 </div>
@@ -360,6 +361,48 @@ Every status change messages **the customer's own mobile number from the order**
 
 The outcome (`submitted` / `failed` / `manual`) is shown in the panel and recorded permanently in the order's **status timeline**. Notification failures never block the status update, and no delivery receipt is ever claimed — only what the provider actually accepted.
 
+### 📥 New-order alerts to the shop
+
+The moment an order request arrives, the shop is alerted with the **complete** order —
+customer, business, mobile, email, GSTIN, full delivery address, every line item with
+pack and price, subtotal and customer notes. The recipient is **your** number, never the
+customer's, so one order produces exactly one alert and the customer sees nothing.
+
+<div align="center">
+
+| State | What happens |
+| :--- | :--- |
+| Provider configured | WhatsApp alert sends automatically on every order |
+| No provider | `/admin/orders` marks the order **Not alerted** and the order page shows a one-click **Send order alert to my WhatsApp** button |
+| Sent successfully | The order is stamped `adminNotifiedAt`, shown as **Alerted** in the table |
+
+</div>
+
+#### Turning automatic alerts on
+
+Automatic WhatsApp is a Meta platform requirement, not an app setting — **no code can
+send a WhatsApp message without a WhatsApp Business API account**. The code is already
+wired up; it only needs credentials.
+
+1. Create an app at [developers.facebook.com/apps](https://developers.facebook.com/apps)
+   and add the **WhatsApp** product.
+2. From **WhatsApp → API Setup**, copy the **temporary access token** and the
+   **Phone number ID**.
+3. Set `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`. Alerts now send
+   automatically.
+4. Optional — set `WHATSAPP_ADMIN_NUMBER` to deliver alerts to a personal phone while
+   the business number stays customer-facing.
+
+> **Why a template matters.** Meta only accepts free-form business-initiated text inside
+> a 24-hour window that the recipient opened by messaging the business number. Outside
+> it the send is rejected — which is exactly the case for an order placed overnight.
+> Create a message template whose body is a single `{{1}}` placeholder, get it approved,
+> then set `WHATSAPP_TEMPLATE_NAME` (and `WHATSAPP_TEMPLATE_LANG` if not `en`). The app
+> tries free-form text first and falls back to the template, so alerts arrive at any hour.
+
+The temporary token expires after 24 hours; create a **System User** token with
+`whatsapp_business_messaging` permission for a permanent one.
+
 <br />
 
 <div align="center">
@@ -414,8 +457,11 @@ Copy `.env.example` → `.env`.
 | `EMAIL_FROM` | — | From address |
 | `EMAIL_TO` | — | Admin inbox for order notifications |
 | `EMAIL_API_URL` | — | Resend-compatible API base |
-| `WHATSAPP_ACCESS_TOKEN` | — | Meta WhatsApp Business Cloud API token → **automatic** customer messages |
+| `WHATSAPP_ACCESS_TOKEN` | — | Meta WhatsApp Business Cloud API token → **automatic** messages (customer status + new-order alerts) |
 | `WHATSAPP_PHONE_NUMBER_ID` | — | Meta phone-number ID (used with the token above) |
+| `WHATSAPP_ADMIN_NUMBER` | — | Optional: send new-order alerts to this number instead of the shop's WhatsApp number |
+| `WHATSAPP_TEMPLATE_NAME` | — | Approved `{{1}}`-body template → alerts work outside the 24-hour window |
+| `WHATSAPP_TEMPLATE_LANG` | `en` | Language code of the template above |
 | `SMS_API_URL` | — | Generic SMS webhook → automatic status messages via SMS |
 | `SMS_API_KEY` | — | Bearer token sent to `SMS_API_URL` |
 

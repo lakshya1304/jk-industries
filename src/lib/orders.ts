@@ -296,14 +296,22 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
     }),
   ]);
 
-  // Record whether the admin was actually alerted, so the dashboard can show a
-  // one-click manual send when no provider is configured. Logged rather than
-  // stored: `OrderEvent` tracks customer status notifications, and adding an
-  // admin-only row there would show up in the customer's tracking timeline.
-  if (!emailSent && !waResult.ok) {
-    console.warn(
-      `[orders] admin not alerted for ${order.reference} (email=${emailSent}, whatsapp=${waResult.ok})`
-    );
+  // Record whether the admin was actually alerted. Stored on the order (not in
+  // `OrderEvent`, which drives the customer's tracking timeline and must not
+  // expose staff-only alerts). A null value is the dashboard's signal to offer
+  // the one-click manual send.
+  if (emailSent || waResult.ok) {
+    try {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { adminNotifiedAt: new Date() },
+      });
+    } catch (err) {
+      console.error(`[orders] could not record admin alert for ${order.reference}:`, err);
+    }
+  } else {
+    console.warn(`[orders] admin not alerted for ${order.reference}`);
+    if (waResult.error) console.warn(`[orders] whatsapp detail: ${waResult.error}`);
   }
 
   // Expose the manual link so the caller can surface it immediately after

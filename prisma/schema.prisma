@@ -70,6 +70,13 @@ model Order {
   subtotal      Float
   itemCount     Int
   clientToken   String? // idempotency token to prevent duplicate submissions
+  /**
+   * When the admin alert (WhatsApp/SMS/email) was successfully delivered for
+   * this order. Null means the shop has NOT been alerted automatically, so the
+   * dashboard can surface a one-click manual send instead of the admin having
+   * to notice on their own.
+   */
+  adminNotifiedAt DateTime?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   items         OrderItem[]
