@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+    <html lang="en" className={jakarta.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Applies the saved theme before first paint so dark mode never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />

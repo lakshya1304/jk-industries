@@ -7,6 +7,8 @@ import { ORDER_STATUSES } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { OrdersTable, type OrderRow } from "@/components/admin/OrdersTable";
 
+export const metadata = { title: "Order requests" };
+
 type SearchParams = Promise<{ q?: string; status?: string }>;
 
 export default function AdminOrdersPage({ searchParams }: { searchParams: SearchParams }) {
@@ -15,7 +17,8 @@ export default function AdminOrdersPage({ searchParams }: { searchParams: Search
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-navy-900">Order requests</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Search requests by reference, customer or mobile, and update their status.
+          Search requests by reference, customer or mobile, update their status, export the list to
+          Excel, or delete requests you no longer need.
         </p>
       </div>
       <Suspense fallback={<OrdersSkeleton />}>

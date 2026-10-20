@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import Link from "next/link";
 import { Boxes, IndianRupee, PackageCheck, Receipt, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { getRevenueSnapshot, EARNING_STATUSES } from "@/lib/revenue";
@@ -50,6 +51,10 @@ async function RangePicker({ searchParams }: { searchParams: SearchParams }) {
 async function RevenueContent({ searchParams }: { searchParams: SearchParams }) {
   const { range = "30" } = await searchParams;
   const days = ALLOWED_RANGES.has(range) ? Number(range) : 30;
+
+  // The page is prerenderable up to here; reading the clock and the order table
+  // is what makes it dynamic, so opt out of prerendering explicitly first.
+  await connection();
 
   const snap = await getRevenueSnapshot(new Date(), days);
   const { currency, comparison } = snap;

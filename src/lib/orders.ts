@@ -117,45 +117,56 @@ export async function createOrderRequest(input: OrderRequestInput): Promise<Crea
   for (let attempt = 0; attempt < 5 && !order; attempt++) {
     const reference = generateOrderReference();
     try {
-      order = await prisma.$transaction(async (tx) => {
-        const created = await tx.order.create({
-          data: {
-            reference,
-            status: "pending",
-            customerName: input.customerName,
-            businessName: input.businessName ?? null,
-            mobile: input.mobile,
-            email: input.email ?? null,
-            gstin: input.gstin ?? null,
-            address: input.address,
-            city: input.city,
-            state: input.state,
-            pincode: input.pincode,
-            notes: input.notes ?? null,
-            subtotal,
-            itemCount,
-            clientToken: input.clientToken ?? null,
-            items: { create: lines },
-          },
-          select: { id: true, reference: true, subtotal: true, itemCount: true },
-        });
-
-        for (const line of lines) {
-          const pack = await tx.packSize.findUnique({
-            where: { id: line.packSizeId },
-            select: { stock: true },
+      order = await prisma.$transaction(
+        async (tx) => {
+          const created = await tx.order.create({
+            data: {
+              reference,
+              status: "pending",
+              customerName: input.customerName,
+              businessName: input.businessName ?? null,
+              mobile: input.mobile,
+              email: input.email ?? null,
+              gstin: input.gstin ?? null,
+              address: input.address,
+              city: input.city,
+              state: input.state,
+              pincode: input.pincode,
+              notes: input.notes ?? null,
+              subtotal,
+              itemCount,
+              clientToken: input.clientToken ?? null,
+              items: { create: lines },
+            },
+            select: { id: true, reference: true, subtotal: true, itemCount: true },
           });
-          if (pack?.stock != null) {
-            const next = Math.max(0, pack.stock - line.quantity);
-            await tx.packSize.update({
-              where: { id: line.packSizeId },
-              data: { stock: next },
-            });
-          }
-        }
 
-        return created;
-      });
+          // Reserve stock for every tracked pack in one round-trip each, issued
+          // together rather than one-at-a-time: fewer network hops inside the
+          // transaction is what keeps a slow connection from timing it out.
+          const packs = await tx.packSize.findMany({
+            where: { id: { in: lines.map((l) => l.packSizeId) } },
+            select: { id: true, stock: true },
+          });
+          const stockById = new Map(packs.map((p) => [p.id, p.stock]));
+
+          await Promise.all(
+            lines.map((line) => {
+              const stock = stockById.get(line.packSizeId);
+              if (stock == null) return null;
+              return tx.packSize.update({
+                where: { id: line.packSizeId },
+                data: { stock: Math.max(0, stock - line.quantity) },
+              });
+            })
+          );
+
+          return created;
+        },
+        // The default 5s budget is not enough when the database is remote and
+        // the network is slow, which would fail a real customer's checkout.
+        { timeout: 20_000, maxWait: 10_000 }
+      );
     } catch (err) {
       const isUniqueViolation =
         err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import {
   AlertTriangle,
   BrainCircuit,
@@ -76,6 +77,11 @@ async function RangePicker({ searchParams }: { searchParams: SearchParams }) {
 async function InsightsContent({ searchParams }: { searchParams: SearchParams }) {
   const { range = "30" } = await searchParams;
   const days = LOOKBACK[range] ?? 30;
+
+  // The report is computed from live order history at the current time, so opt
+  // out of prerendering before reading the clock.
+  await connection();
+
   const report = await getAiReport(new Date(), days, 14);
 
   const restock = report.forecasts.filter((f) => f.priority >= 60);
